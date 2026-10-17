@@ -1,0 +1,86 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install SDK platform 37 and build-tools 37
+        run: |
+          sdkmanager --install "platforms;android-37" "build-tools;37.0.0" "platform-tools"
+          yes | sdkmanager --licenses > /dev/null || true
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.4.1'
+
+      - name: Compute version
+        id: ver
+        run: |
+          echo "code=${{ github.run_number }}" >> $GITHUB_OUTPUT
+          echo "name=1.0.${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+      - name: Build release APK
+        run: |
+          gradle :app:assembleRelease --no-daemon --stacktrace \
+            -PcompatVersionCode=${{ steps.ver.outputs.code }} \
+            -PcompatVersionName=${{ steps.ver.outputs.name }}
+
+      - name: Collect APK
+        run: |
+          mkdir -p out
+          find app/build/outputs/apk -name "*.apk" -exec cp {} out/ \;
+          ls -la out/
+
+      - name: Sign APK with debug key
+        run: |
+          APK=$(ls out/*.apk | head -1)
+          BT=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -1)
+          if [ -f ~/.android/debug.keystore ]; then
+            KS=~/.android/debug.keystore
+          else
+            keytool -genkeypair -v -keystore /tmp/debug.keystore -alias androiddebugkey \
+              -storepass android -keypass android -keyalg RSA -keysize 2048 -validity 10000 \
+              -dname "CN=Android Debug,O=Android,C=US" > /dev/null 2>&1
+            KS=/tmp/debug.keystore
+          fi
+          $BT/zipalign -f -p 4 "$APK" out/aligned.apk
+          $BT/apksigner sign --ks "$KS" --ks-pass pass:android --key-pass pass:android \
+            --ks-key-alias androiddebugkey \
+            --out "out/Z-Flow-Compat-Patch-${{ steps.ver.outputs.name }}.apk" out/aligned.apk
+          $BT/apksigner verify --print-certs "out/Z-Flow-Compat-Patch-${{ steps.ver.outputs.name }}.apk" | head -5
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Z-Flow-Compat-Patch-${{ steps.ver.outputs.name }}
+          path: out/Z-Flow-Compat-Patch-*.apk
+          if-no-files-found: error

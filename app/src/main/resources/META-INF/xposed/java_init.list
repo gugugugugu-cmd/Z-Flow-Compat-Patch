@@ -1,0 +1,2 @@
+# libxposed 模块 Java 入口（每行一个入口类）
+io.relimus.zflow.compat.xposed.CompatModule

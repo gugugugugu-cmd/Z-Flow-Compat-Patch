@@ -1,0 +1,27 @@
+[versions]
+# 工具链：libxposed 102 要求 compileSdk 37，因此必须用 AGP 9.x
+# AGP 9.2.1 需要 Gradle >= 9.4.1；AGP 9 自带 Kotlin 支持，无需 kotlin-android 插件
+agp = "9.2.1"
+
+# Xposed（现代 API）
+libxposed = "102.0.0"
+
+# AndroidX
+core-ktx = "1.17.0"
+appcompat = "1.7.1"
+preference = "1.2.1"
+annotation = "1.9.1"
+
+[libraries]
+# Xposed：api 供编译期使用，service 提供远程偏好（设置读写）
+libxposed-api = { module = "io.github.libxposed:api", version.ref = "libxposed" }
+libxposed-service = { module = "io.github.libxposed:service", version.ref = "libxposed" }
+
+# AndroidX
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "core-ktx" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
+androidx-preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "preference" }
+androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "annotation" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }

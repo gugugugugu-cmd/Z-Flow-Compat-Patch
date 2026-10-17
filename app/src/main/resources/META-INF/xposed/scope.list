@@ -1,0 +1,8 @@
+# libxposed 模块默认作用域（每行一个包名）
+# 用户仍需在 LSPosed 管理器里勾选目标应用
+android
+com.tencent.mm
+com.qidian.QDReader
+org.telegram.messenger
+org.telegram.messenger.web
+org.telegram.plus

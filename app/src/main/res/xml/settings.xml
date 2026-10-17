@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="@string/pref_group_patch">
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="wechat_statusbar_fix"
+            android:summary="@string/pref_wechat_summary"
+            android:title="@string/pref_wechat_title" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="statusbar_dimen_fix"
+            android:summary="@string/pref_statusbar_summary"
+            android:title="@string/pref_statusbar_title" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="telegram_pip_disable"
+            android:summary="@string/pref_telegram_summary"
+            android:title="@string/pref_telegram_title" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_group_debug">
+
+        <SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="verbose_log"
+            android:summary="@string/pref_verbose_summary"
+            android:title="@string/pref_verbose_title" />
+
+        <SwitchPreferenceCompat
+            android:defaultValue="true"
+            android:key="log_to_framework"
+            android:summary="@string/pref_log_summary"
+            android:title="@string/pref_log_title" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory android:title="@string/pref_group_about">
+
+        <Preference
+            android:key="about"
+            android:summary="@string/pref_about_summary"
+            android:title="@string/pref_about_title" />
+
+    </PreferenceCategory>
+
+</PreferenceScreen>
