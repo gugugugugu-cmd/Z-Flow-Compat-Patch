@@ -124,9 +124,13 @@ object WeChatStatusBarFix {
 
     /** 优先精确匹配 `i(Context, int)`，失败再尝试 `h(Context)`。 */
     private fun resolveTarget(clazz: Class<*>, className: String): Method? {
+        val intPrimitive = Int::class.javaPrimitiveType ?: run {
+            PatchLog.debug("$NAME: 无法取得 int 原始类型，跳过精确匹配")
+            return null
+        }
         // 主入口：int i(Context, int)。第二个参数为 fallback 值（主界面传 -1）。
         val exact = Reflect.findMethodExact(
-            clazz, TARGET_METHOD, Context::class.java, Int::class.javaPrimitiveType
+            clazz, TARGET_METHOD, Context::class.java, intPrimitive
         )
         if (exact != null) {
             PatchLog.debug("$NAME: 精确命中主入口 $className#$TARGET_METHOD(Context, int)")
