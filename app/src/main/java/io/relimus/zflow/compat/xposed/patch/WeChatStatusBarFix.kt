@@ -202,7 +202,7 @@ object WeChatStatusBarFix {
                 }
                 patch(ctx, chain)
             }
-            PatchLog.info("$NAME: 已挂钩 $className#${method.name} —— 非主屏时状态栏高度归零")
+            PatchLog.info("$NAME: 已挂钩 $className#${method.name} —— 非主屏仅首页会话列表高度归零")
             true
         }.onFailure {
             PatchLog.warn("$NAME: 挂钩 $className#${method.name} 失败", it)
@@ -235,7 +235,22 @@ object WeChatStatusBarFix {
             return chain.proceed()
         }
 
-        PatchLog.debug("$NAME: displayId=$displayId 非主屏 → 状态栏高度置 0")
+        // ol.i 是全局入口：通讯录、发现和首页都会调用。冷启动小窗时若全部归零，
+        // 通讯录/发现首项会被标题栏覆盖；它们需要保留微信原始高度。只有首页的
+        // MainUI / conversation 调用需要归零，消除透明的第二行标题栏。
+        val caller = Throwable().stackTrace.firstOrNull { frame ->
+            val name = frame.className
+            name.startsWith("com.tencent.mm.ui.conversation.") ||
+                name == "com.tencent.mm.ui.conversation.MainUI"
+        }
+        if (caller == null) {
+            PatchLog.debug("$NAME: displayId=$displayId 非主屏但非首页调用 → 放行")
+            return chain.proceed()
+        }
+
+        PatchLog.debug(
+            "$NAME: displayId=$displayId 首页调用 ${caller.className}#${caller.methodName} → 状态栏高度置 0"
+        )
         return 0
     }
 
