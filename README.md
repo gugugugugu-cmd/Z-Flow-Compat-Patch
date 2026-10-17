@@ -1,39 +1,827 @@
 # Z-Flow 兼容性补丁（独立版）
 
-从 [Z-Flow](https://github.com/ldbsmh/Z-Flow) 中把**兼容性修复补丁单独拆出来**，做成一个轻量 Xposed 模块。
-不含小窗本体功能，只做三件修复 —— 因为小窗功能本身还在 Z-Flow 里更新，没必要为了这几个补丁去重编整个小窗 App。
+从 [Z-Flow](https://github.com/ldbsmh/Z-Flow) 中把兼容性修复补丁单独拆出来，做成轻量 Xposed 模块。
+本项目不实现小窗本体，只处理应用进入 Z-Flow 虚拟屏后出现的兼容性问题。
+
+> 当前微信方案已在 **微信 8.0.79（versionCode 3200，Tinker patch.client.ver=0x28004f34）** 上验证：
+> 冷启动小窗、展开、再次缩回小窗后，微信首页、通讯录、发现页顶部布局均正常。
 
 ## 包含的三个补丁
 
 | 补丁 | 修复内容 | 生效方式 |
 | --- | --- | --- |
-| **微信小窗标题栏重复修复** | 修正微信在小窗中标题栏重复出现 | 把微信加入 LSPosed 作用域；开关切换后切回微信前台即生效 |
-| **小窗顶部空白修复** | 修正部分应用在小窗顶部预留状态栏高度导致空白（如起点读书） | 把目标应用加入 LSPosed 作用域；开关切换后切回应用前台即生效 |
-| **关闭 Telegram 画中画** | 修正 Telegram 系应用在小窗中只剩角落一个小画面 | 把目标应用加入 LSPosed 作用域。注意：主屏上也会一并失去画中画 |
+| **微信小窗顶部布局修复** | 修正首页透明重复标题行、通讯录/发现冷启动被顶部覆盖、通讯录跨窗口后顶部变宽 | 将微信加入 LSPosed 作用域；更新模块后完整结束微信进程再测试 |
+| **小窗顶部空白修复** | 修正部分应用直接读取系统 `status_bar_height` 而产生顶部空白（如起点读书） | 将目标应用加入作用域；**微信进程会被自动排除** |
+| **关闭 Telegram 画中画** | 修正 Telegram 系应用在小窗中只剩角落画面 | 将目标应用加入作用域；主屏画中画也会被关闭 |
 
-## 技术要点
+---
 
-- **框架 API：libxposed API 102**（`io.github.libxposed:api` / `:service`，`minApiVersion=102`）。
-  用的是现代 Xposed API，不是老的 `de.robv.android.xposed`。
-- **工具链**：AGP 9.2.1 + Gradle 9.4.1 + compileSdk 37。
-  因为 libxposed 102 的 AAR 声明了 `minCompileSdk=37`。
-- **设置同步**：走 libxposed 的 *remote preferences*，模块 App 写、被 hook 的进程读。
-  LSPosed 会把改动推给已加载的目标进程并触发变更回调，所以开关**不用重启目标应用**，切回前台即可生效。
+# 微信 8.0.79 小窗修复：完整分析与迁移文档
 
-## 详细日志（应对混淆变化）
+本节记录最终修复方案、分析过程、踩过的坑和微信升级后的适配步骤。不要只照抄混淆类名；应先用日志和反编译确认新版本的实际调用链。
 
-微信等应用更新后混淆名会变，补丁可能因此失效。模块内置了一套可开关的详细日志：
+## 1. 最初症状
 
-- **详细日志**（默认关）：把每一步探测过程写进 LSPosed 日志 ——
-  候选类列表、每个候选类命中的方法名与签名、判定依据、最终选中的目标、失败原因与堆栈。
-- **日志输出到框架**（默认开）：关掉后只保留 Warning/Error。
+微信运行在 Z-Flow 创建的虚拟显示屏（`displayId != 0`）时，曾出现三组相互切换的状态：
 
-日志统一前缀 `[ZFlowCompat]`，在 LSPosed 管理器 → 日志里过滤这个前缀即可。
-开详细日志后切回目标应用前台，就能看到完整探测过程；据此更新补丁里的候选名列表。
+1. **微信首页出现两行标题栏**
+   - 第一行可以点击；
+   - 第二行内容与第一行相同，处于透明轮廓下方，不能点击；
+   - 本质不是 Android 系统状态栏真的绘制了两遍，而是微信会话列表的顶部容器/遮罩/偏移露出了一份重复内容。
 
-## 构建
+2. **通讯录和发现顶部变宽**
+   - 标题文字本身位置或样式变化不明显；
+   - 标题栏底部多出约一个状态栏高度的同色空白；
+   - 功能项被向下移动，但通常仍能点击。
 
-推送到 `main`/`master` 分支即触发 GitHub Actions 自动构建，产物在 Actions 的 Artifacts 里。
+3. **强行停止微信后直接冷启动小窗，通讯录/发现首项被覆盖**
+   - 顶部看起来不再很宽；
+   - 但“新的朋友”等第一项被标题栏盖住，无法点击；
+   - 展开窗口再缩回小窗后，又变成顶部较宽但可以点击。
+
+这些现象看起来相近，却不是同一个布局值造成的。最终确认至少涉及：
+
+- 微信全局状态栏高度入口；
+- 首页会话列表自己的顶部 margin / status-bar mask；
+- 通讯录自己的顶部高度计算；
+- 通讯录跨窗口缓存 `Main_top_marign`；
+- 微信 Tinker 热更新后的实际 ClassLoader；
+- 通用 `StatusBarDimenFix` 在微信进程中的误安装。
+
+## 2. 关键原则：相同现象可能有不同原因
+
+“顶部多一截”可能来自：
+
+- `status_bar_height` 返回值；
+- Fragment 根 View 的 `paddingTop`；
+- 列表 `topMargin`；
+- 状态栏遮罩 View 的 `height`；
+- `rootView.findViewById(...).getTop()`；
+- SharedPreferences 中缓存的主屏 margin；
+- 多窗口状态未及时复位；
+- base.apk 与 Tinker patch 中同名类不是同一个 `Class`。
+
+因此不能看到空白就统一返回 `0`。必须确认具体页面在哪里消费这个值，以及冷启动、展开、缩回分别走哪条分支。
+
+---
+
+## 3. 日志给出的第一批证据
+
+旧实现安装日志为：
+
+```text
+WeChatStatusBarFix: 命中候选类 com.tencent.mm.ui.ol
+WeChatStatusBarFix: 精确命中 com.tencent.mm.ui.ol#h(Context)
+WeChatStatusBarFix: 已挂钩 com.tencent.mm.ui.ol#h
+```
+
+但实际使用微信时，日志里完全没有：
+
+```text
+WeChatStatusBarFix: displayId=N 非主屏 → 状态栏高度置 0
+```
+
+与此同时，通用补丁不断输出：
+
+```text
+StatusBarDimenFix: displayId=N 非主屏，status_bar_height 124 → 0
+```
+
+这说明：
+
+- “成功找到并挂钩方法”不等于“目标页面真的调用了该方法”；
+- 旧微信专用 hook 没覆盖主界面；
+- 真正持续改写微信布局的是通用资源 hook；
+- 必须用 xref 查主界面的真实调用者，不能仅按方法名和返回类型猜测。
+
+---
+
+## 4. 反编译定位：`ol.h` 不是主界面入口
+
+使用 MT MCP 打开微信 8.0.79 APK，对以下方法做 xref：
+
+```text
+com.tencent.mm.ui.ol#h(Context): int
+com.tencent.mm.ui.ol#i(Context, int): int
+```
+
+### `ol.h(Context)` 的实际调用者
+
+主要是：
+
+- Finder / 视频号；
+- 设置页；
+- WebView；
+- Live 等次级页面。
+
+主界面三个 tab 不依赖它。因此旧方案“挂钩成功但不触发”完全符合运行日志。
+
+### `ol.i(Context, int)` 的实际调用者
+
+xref 明确包含：
+
+```text
+com.tencent.mm.ui.conversation.MainUI#C0 / K0
+com.tencent.mm.ui.conversation.w7#run
+com.tencent.mm.ui.contact.address.BaseAddressUIFragment#I0 / M0
+com.tencent.mm.ui.FindMoreFriendsUI#a1 / N1
+com.tencent.mm.ui.chatting.component.y2#w0
+```
+
+对应关系：
+
+| 页面 | 关键调用类/方法 |
+| --- | --- |
+| 微信首页（会话列表） | `MainUI.C0/K0`、`conversation.w7.run` |
+| 通讯录 | `BaseAddressUIFragment.I0/M0`、`dp5.h.run` |
+| 发现 | `FindMoreFriendsUI.a1/N1` |
+| 聊天页 | `chatting.component.y2.w0` |
+
+因此微信 8.0.79 的中央状态栏高度入口是：
+
+```java
+com.tencent.mm.ui.ol.i(Context context, int fallback): int
+```
+
+`h(Context)` 只是部分页面使用的薄包装，并且内部仍会调用 `i(Context,int)`。
+
+---
+
+## 5. `ol.i` 的内部逻辑与“幽灵状态栏”
+
+反编译得到的逻辑可简化为：
+
+```java
+int getStatusBarHeight(Context ctx, int fallback) {
+    int insetTop = readWechatWindowInsets(ctx); // n3.g3.a(1).b
+    if (insetTop >= dpToPx(ctx, 25)) {
+        return insetTop;
+    }
+
+    int systemHeight = readInternalStatusBarHeight(ctx); // ol.k(...)
+
+    if (systemHeight > 0 && ctx instanceof Activity) {
+        int visibleBased = displayHeight - visibleDisplayFrame.height();
+        if (visibleBased == 0) {
+            visibleBased = visibleDisplayFrame.top;
+        }
+
+        // 微信只接受“比系统值更大、且差距小于 100px”的修正值
+        if (visibleBased > systemHeight && visibleBased - systemHeight < 100) {
+            systemHeight = visibleBased;
+        }
+    }
+
+    return systemHeight > 0 ? systemHeight : fallback;
+}
+```
+
+`ol.k(Context,int)` 会反射：
+
+```text
+com.android.internal.R$dimen.status_bar_height
+```
+
+然后通过 `Resources.getDimensionPixelSize()` 得到该设备的系统状态栏高度（实测 124px）。
+
+在 Z-Flow 虚拟屏中，实际没有对应的系统状态栏：
+
+```text
+visibleBased ≈ 0
+systemHeight = 124
+```
+
+但微信的修正条件只接受 `visibleBased > systemHeight`，因此不会采用 0，最终仍返回 124px。这就是最初的“幽灵状态栏高度”。
+
+---
+
+## 6. 为什么不能对所有 `ol.i` 调用统一返回 0
+
+第一版中央入口修复曾在所有非主屏调用中直接返回 0。首页立即恢复正常，但产生新问题：
+
+- 冷启动小窗时，通讯录和发现没有保留页面需要的顶部安全空间；
+- “新的朋友”等第一项被标题栏覆盖；
+- 展开后再缩回，微信重新计算/缓存了主屏高度，页面又变成较宽但可点击。
+
+这证明三个页面虽然共享 `ol.i()`，但消费方式不同：
+
+- 首页需要 `0` 来消除透明的重复行；
+- 通讯录/发现不能简单统一归零；
+- 页面级行为必须在全局高度入口之后继续分析。
+
+最终策略是：
+
+```text
+非主屏 + 调用栈来自 com.tencent.mm.ui.conversation.* → 返回 0
+其他页面调用 ol.i → 放行微信原逻辑
+主屏 → 全部放行
+```
+
+当前实现通过调用栈识别会话列表：
+
+```kotlin
+val caller = Throwable().stackTrace.firstOrNull { frame ->
+    val name = frame.className
+    name.startsWith("com.tencent.mm.ui.conversation.") ||
+        name == "com.tencent.mm.ui.conversation.MainUI"
+}
+```
+
+这一步解决首页重复标题行，同时避免再次破坏通讯录和发现的点击区域。
+
+---
+
+## 7. 首页的真实布局链路
+
+`MainUI.K0()` 会取：
+
+```text
+statusBarHeight = ol.i(context, -1)
+actionBarHeight = kb5.o1.a(context)
+showHeaderContainer = conversation.a6.B()
+```
+
+随后调用：
+
+```text
+MainUI.H0(actionBarMargin, statusBarHeight)
+```
+
+`H0()` 会同时修改：
+
+- 会话列表 `RelativeLayout.LayoutParams.topMargin`；
+- `MainUI.q` 对应的 status-bar mask View 高度。
+
+其日志字符串包括：
+
+```text
+setListMargin origin: %d, topMargin: %d
+setStatusBarMaskView height origin: %d, new: %d isInMultiWindowMode:%s
+```
+
+`conversation.w7.run()` 还会异步重试读取状态栏高度并再次调用 `H0()`：
+
+```text
+[trySetListViewMargin] try getStatusHeight again!
+[trySetListViewMargin] now:%s old:%s
+```
+
+因此首页看到的“第二行”不是一个真正可交互的第二标题栏，而是列表 margin / mask View / header container 共同造成的透明轮廓，下面露出了重复内容。只对会话列表调用的 `ol.i()` 返回 0，可以让 `H0()` 使用正确的小窗偏移，同时不影响其他页面。
+
+---
+
+## 8. 通讯录与发现为什么不是同一套代码
+
+通讯录与发现共享 `ol.i()` 作为一个输入，但之后的布局代码不同。
+
+### 8.1 发现页
+
+发现页主要通过：
+
+```text
+com.tencent.mm.ui.FindMoreFriendsUI#a1()
+com.tencent.mm.ui.FindMoreFriendsUI#N1()
+```
+
+读取并应用状态栏高度。它没有通讯录那条 `Main_top_marign` 缓存分支，因此在“展开 → 缩回小窗”后可以自行恢复正常。
+
+### 8.2 通讯录页
+
+通讯录使用：
+
+```text
+com.tencent.mm.ui.contact.address.BaseAddressUIFragment#I0(): int
+com.tencent.mm.ui.contact.address.BaseAddressUIFragment#M0(): void
+Ldp5/h;#run(): void
+```
+
+`I0()` 不是简单返回 `ol.i()`，而是计算顶部总高度。简化逻辑如下：
+
+```java
+int actionBarHeight = ol.a(context);
+int statusHeight = ol.i(context, -1);
+View topReference = root.findViewById(0x7f0a00d3);
+boolean inMultiWindow = LauncherUI.getInstance().isInMultiWindowMode();
+
+if (!inMultiWindow) {
+    boolean needRead = prefs.getBoolean("Main_need_read_top_margin", false);
+    if (needRead || SDK_INT >= 31) {
+        int cached = prefs.getInt("Main_top_marign", -1);
+        if (cached >= 0) {
+            return actionBarHeight + cached;
+        }
+    }
+}
+
+if (inMultiWindow && topReference != null) {
+    statusHeight = topReference.getTop();
+}
+
+return actionBarHeight + statusHeight;
+```
+
+关键缓存键（注意微信原始拼写就是 `marign`）：
+
+```text
+Main_need_read_top_margin
+Main_top_marign
+```
+
+`M0()` 与 `dp5.h.run()` 会把 `I0()` 结果写入 Fragment 根 View 的 `paddingTop`，并通过异步 Runnable 反复校正：
+
+```text
+[trySetParentViewPadding] try getStatusHeight again!
+[trySetParentViewPadding] now:%s old:%s
+```
+
+这解释了最终残留问题：
+
+1. 冷启动小窗时缓存尚未污染，通讯录正常；
+2. 展开窗口后微信更新主屏 `Main_top_marign`；
+3. 缩回虚拟屏时通讯录仍读取该缓存；
+4. `I0()` 返回 `ActionBar + 主屏缓存高度`；
+5. `M0()` / `dp5.h` 把它写入 `paddingTop`，所以只有通讯录重新变宽；
+6. 发现没有这条缓存分支，因此表现不同。
+
+### 最终通讯录修复
+
+虚拟屏上 hook：
+
+```text
+BaseAddressUIFragment.I0()
+```
+
+只返回：
+
+```text
+ol.a(Context)  // 微信自己的 ActionBar 高度
+```
+
+即在小窗中忽略：
+
+- `ol.i()` 的 status height；
+- `topReference.getTop()`；
+- `Main_top_marign`；
+- 主屏多窗口阶段遗留的顶部偏移。
+
+主屏 `displayId == 0` 时完全放行原逻辑。这样 `M0()` 和 `dp5.h.run()` 仍可正常执行，只是拿到正确的小窗顶部总高度，不需要继续 hook `setPadding()`。
+
+---
+
+## 9. Tinker 热更新：为什么“挂钩成功”仍可能无效
+
+微信 8.0.79 的日志显示：
+
+```text
+TinkerLoader.tryLoad
+classloader = dalvik.system.DelegateLastClassLoader
+patch.client.ver=0x28004f34
+patch.basepack.client.ver=0x28004f30
+tinker_classN.apk
+```
+
+第一次 `onPackageReady` 提供的是 base.apk 的：
+
+```text
+dalvik.system.PathClassLoader
+```
+
+可以在其中找到并挂钩 `com.tencent.mm.ui.ol`，但 Tinker 随后加载补丁 dex。由于 `DelegateLastClassLoader` 优先使用补丁中的类，实际 UI 调用的 `ol` 与 base.apk 的 `ol` 可能是两个不同的 `Class` 对象。
+
+典型症状：
+
+```text
+已挂钩 com.tencent.mm.ui.ol#i
+```
+
+但运行时一条 interceptor 日志都没有。这不一定是方法不再调用，也可能是挂错了 ClassLoader 中的同名类。
+
+### 当前处理方式
+
+1. 先在 base `PathClassLoader` 安装，兼容未加载 Tinker 或未覆盖目标类的情况；
+2. 挂钩：
+
+```text
+com.tencent.tinker.loader.TinkerLoader#tryLoad(TinkerApplication)
+```
+
+3. `chain.proceed()` 完成后，从 Application context 优先取得当前 ClassLoader：
+
+```kotlin
+appContext.classLoader ?: Thread.currentThread().contextClassLoader
+```
+
+4. 若得到 `DelegateLastClassLoader`，在该 ClassLoader 中重新通过 `Class.forName(..., false, loader)` 查找并挂钩：
+
+```text
+com.tencent.mm.ui.ol#i(Context,int)
+BaseAddressUIFragment#I0()
+```
+
+5. 使用：
+
+```kotlin
+ConcurrentHashMap.newKeySet<ClassLoader>()
+```
+
+按 ClassLoader 去重；使用 `AtomicBoolean` 确保 `TinkerLoader.tryLoad` 每进程只挂一次。
+
+### 正常日志
+
+```text
+WeChatStatusBarFix: 开始探测目标 source=base loader=dalvik.system.PathClassLoader
+WeChatStatusBarFix: 已挂钩 TinkerLoader.tryLoad，等待热更新类加载完成
+WeChatStatusBarFix: Tinker 加载完成，重新探测 loader=dalvik.system.DelegateLastClassLoader
+WeChatStatusBarFix: source=tinker 命中候选类 com.tencent.mm.ui.ol
+WeChatStatusBarFix: source=tinker 已挂钩通讯录 I0()
+```
+
+---
+
+## 10. 为什么微信必须按进程排除 `StatusBarDimenFix`
+
+通用补丁会 hook：
+
+```text
+Resources.getDimensionPixelSize(int)
+```
+
+在虚拟屏上遇到：
+
+```text
+android:dimen/status_bar_height
+```
+
+就把返回值从 124 改为 0。这适合起点读书一类直接读取系统 dimen 的应用，但不适合微信，因为微信还有自己的 WindowInsets、页面 margin、遮罩和缓存逻辑。
+
+最初仅按 `PackageReadyParam.packageName` 排除：
+
+```kotlin
+if (pkg != "com.tencent.mm") install StatusBarDimenFix
+```
+
+仍然失败。原因是同一个微信主进程稍后加载 WebView 时，会再次收到：
+
+```text
+onPackageReady: pkg=com.google.android.webview
+```
+
+于是通用补丁又在微信进程被安装，日志继续出现：
+
+```text
+StatusBarDimenFix: displayId=N 非主屏，status_bar_height 124 → 0
+```
+
+### 当前正确做法
+
+在 `onModuleLoaded()` 保存真实宿主进程名：
+
+```kotlin
+hostProcessName = param.processName
+```
+
+按进程排除：
+
+```kotlin
+val isWeChatProcess = hostProcessName == "com.tencent.mm" ||
+    hostProcessName.startsWith("com.tencent.mm:")
+```
+
+只要宿主是微信主进程或任意微信子进程，无论后续 `PackageReady` 报告微信、WebView 还是其他包，都不得安装 `StatusBarDimenFix`。
+
+正常日志应为：
+
+```text
+StatusBarDimenFix: process=com.tencent.mm pkg=com.tencent.mm 位于微信进程，跳过
+StatusBarDimenFix: process=com.tencent.mm pkg=com.google.android.webview 位于微信进程，跳过
+```
+
+并且不应再出现该微信进程的：
+
+```text
+StatusBarDimenFix: status_bar_height 124 → 0
+```
+
+---
+
+## 11. 最终稳定方案总览
+
+最终不是一个 hook，而是四层防线：
+
+### A. 按真实微信进程排除通用资源补丁
+
+目的：消除 `StatusBarDimenFix` 与微信页面布局的交叉改写。
+
+```text
+CompatModule.hostProcessName
+→ com.tencent.mm / com.tencent.mm:* 全部跳过 StatusBarDimenFix
+```
+
+### B. 同时处理 base 与 Tinker ClassLoader
+
+目的：确保 hook 作用于真正执行的类，而不仅是 base.apk 中的同名类。
+
+```text
+PathClassLoader → 安装一次
+TinkerLoader.tryLoad 完成
+DelegateLastClassLoader → 再安装一次
+```
+
+### C. 首页会话列表按调用栈归零
+
+目的：只移除首页透明的重复标题行，不破坏其他页面安全空间。
+
+```text
+ol.i(Context,int)
++ displayId != 0
++ caller 属于 com.tencent.mm.ui.conversation.*
+→ return 0
+```
+
+其他页面调用 `ol.i()`：
+
+```text
+chain.proceed()
+```
+
+### D. 通讯录单独修正顶部总高度
+
+目的：去掉展开窗口后遗留的 `Main_top_marign`。
+
+```text
+BaseAddressUIFragment.I0()
++ displayId != 0
+→ return ol.a(Context) // 只保留 ActionBar 高度
+```
+
+主屏：
+
+```text
+chain.proceed()
+```
+
+最终效果：
+
+| 场景 | 首页 | 通讯录 | 发现 |
+| --- | --- | --- | --- |
+| 冷启动小窗 | 正常单行 | 正常、可点击 | 正常、可点击 |
+| 小窗展开 | 原逻辑 | 原逻辑 | 原逻辑 |
+| 展开后缩回小窗 | 正常单行 | 不读取主屏 margin，保持正常 | 正常 |
+| 主屏 | 完全放行 | 完全放行 | 完全放行 |
+
+---
+
+## 12. 微信新版本适配流程
+
+微信升级后不要立即替换候选名。按以下顺序确认。
+
+### 第一步：保留旧版并采集详细日志
+
+打开模块中的：
+
+- 详细日志；
+- 日志输出到框架。
+
+完整结束微信所有进程，然后测试：
+
+1. 主屏启动；
+2. 冷启动小窗；
+3. 切换首页、通讯录、发现；
+4. 展开窗口；
+5. 缩回小窗；
+6. 再切换三个 tab。
+
+检查是否出现：
+
+```text
+source=base 命中候选类
+Tinker 加载完成
+source=tinker 命中候选类
+已挂钩 ...#i
+已挂钩通讯录 I0()
+首页调用 ... → 状态栏高度置 0
+通讯录 I0() → 仅保留 ActionBar 高度
+```
+
+### 第二步：区分“类没找到”和“hook 没触发”
+
+#### 类没找到
+
+日志类似：
+
+```text
+候选类 com.tencent.mm.ui.ol 未在 source=tinker 找到
+```
+
+说明混淆类名变化，需要重新找 WeUIToolHelper 类。
+
+#### 方法没找到
+
+日志类似：
+
+```text
+无精确方法 i(Context, int)
+```
+
+说明方法名或签名变化。
+
+#### 显示挂钩成功但没有运行日志
+
+优先怀疑：
+
+1. Tinker / 插件使用了另一个 ClassLoader；
+2. 页面不再调用该方法；
+3. 微信更新后页面换了新实现；
+4. context 无法取得 displayId，走了保守放行。
+
+不要只继续增加候选类名，应先做 xref 和 ClassLoader 检查。
+
+### 第三步：寻找新的状态栏工具类
+
+在 MT/JADX 中搜索以下稳定字符串：
+
+```text
+WeUIToolHelper
+[fixStatusBarHeight]
+[getStatusBarHeight]
+[getStatusBarHeightFromSysR]
+status_bar_height
+com.android.internal.R$dimen
+```
+
+目标方法通常具备这些特征：
+
+- `public static`；
+- 返回 `int`；
+- 参数包含 `Context` 与 fallback `int`；
+- 内部引用 `WindowInsets`、`getWindowVisibleDisplayFrame` 或系统 dimen；
+- 调用者包含微信首页、通讯录和发现页面。
+
+确认后更新：
+
+```kotlin
+CANDIDATE_CLASSES
+TARGET_METHOD
+resolveTarget()
+```
+
+不要仅按“名称像以前”判断，必须检查 xref。
+
+### 第四步：重新定位首页
+
+对新状态栏入口做 xref，确认首页调用类。当前版本是：
+
+```text
+com.tencent.mm.ui.conversation.MainUI
+com.tencent.mm.ui.conversation.w7
+```
+
+若包名变化，更新调用栈判断：
+
+```kotlin
+name.startsWith("新的会话列表包名")
+```
+
+判断标准：该调用路径最终负责会话列表 topMargin/status mask，而非 Finder、WebView 或聊天页。
+
+### 第五步：重新定位通讯录顶部高度方法
+
+当前类和方法：
+
+```text
+com.tencent.mm.ui.contact.address.BaseAddressUIFragment#I0(): int
+```
+
+可通过以下稳定特征搜索：
+
+```text
+Main_need_read_top_margin
+Main_top_marign
+getTopHeight statusHeight:%s, isInMultiWindowMode:%s
+[trySetParentViewPadding]
+```
+
+目标方法通常：
+
+- 无参数；
+- 返回 `int`；
+- 调用 ActionBar 高度方法；
+- 调用状态栏高度方法；
+- 判断 `LauncherUI.isInMultiWindowMode()`；
+- 读取 `Main_top_marign`；
+- 返回两者之和。
+
+找到后更新：
+
+```text
+BaseAddressUIFragment 类名
+I0 方法名
+ol.a(Context) 或新版本 ActionBar 高度方法
+```
+
+### 第六步：确认 Tinker 是否仍存在
+
+搜索：
+
+```text
+com.tencent.tinker.loader.TinkerLoader
+tryLoad(TinkerApplication)
+DelegateLastClassLoader
+```
+
+如果微信改用其他热更新框架：
+
+- 找到“补丁 dex 完成加载”的回调；
+- 在回调返回后读取真正的 ClassLoader；
+- 再执行 `installForLoader()`；
+- 继续按 ClassLoader 去重。
+
+如果目标类只存在于 Tinker patch，而 base 中不存在，base 探测失败是可以接受的，但 Tinker 阶段必须成功。
+
+### 第七步：逐场景回归
+
+至少测试：
+
+- 冷启动直接进入小窗；
+- 主屏启动后移动到小窗；
+- 小窗展开再缩回；
+- 首页/通讯录/发现来回切换；
+- 打开聊天页再返回；
+- 微信进程重启；
+- Tinker patch 更新后重启；
+- 与 `WeChatTablet` 同时启用；
+- 主屏布局无回归；
+- 小程序/WebView 不受影响。
+
+---
+
+## 13. 推荐的日志判读表
+
+| 日志 | 含义 | 行动 |
+| --- | --- | --- |
+| `source=base 命中候选类` | base 类找到 | 继续检查 Tinker |
+| `Tinker 加载完成` | 热更新已生效 | 必须随后看到 source=tinker 探测 |
+| `source=tinker 命中候选类` | 找到真正运行类 | 检查 interceptor 是否触发 |
+| `首页调用 ... → 状态栏高度置 0` | 首页修复正在运行 | 正常 |
+| `非主屏但非首页调用 → 放行` | 通讯录/发现等未被全局归零 | 正常 |
+| `通讯录 I0() → 仅保留 ActionBar 高度` | 通讯录缓存修复正在运行 | 正常 |
+| `无法取得 displayId，放行` | Context 不带显示屏 | 若对应页面仍异常，再增加 Activity/生命周期追踪兜底 |
+| 微信进程出现 `StatusBarDimenFix ... 124 → 0` | 通用补丁被误装回微信 | 检查进程排除与 WebView PackageReady |
+| 挂钩成功但无任何调用日志 | 可能挂错 ClassLoader/死方法 | 查 Tinker 和 xref |
+
+---
+
+## 14. 已验证过但不应重复采用的方案
+
+### 仅 hook `ol.h(Context)`
+
+失败原因：主界面不调用它。安装成功不代表有效。
+
+### 微信与通用 `StatusBarDimenFix` 同时启用
+
+失败原因：不同页面/时刻分别拿到 124 或 0，出现随机空白、覆盖和跳变。
+
+### 只按 `packageName == com.tencent.mm` 排除通用补丁
+
+失败原因：同一微信进程加载 WebView 时 `pkg=com.google.android.webview`，会重新安装通用 hook。
+
+### 对所有非主屏 `ol.i()` 统一返回 0
+
+失败原因：首页正常，但通讯录/发现冷启动首项被标题栏覆盖。
+
+### 看到通讯录和发现都“顶部变宽”就认为同一原因
+
+失败原因：两页只共享高度来源；通讯录还存在 `Main_top_marign` 和多窗口分支，发现没有。
+
+### 直接清空通讯录 SharedPreferences 缓存
+
+不推荐。缓存是微信全局状态的一部分，主动删除可能影响主屏和其他页面。当前方案只在虚拟屏拦截 `I0()` 返回值，范围更小且可逆。
+
+---
+
+## 15. 实现安全边界
+
+当前补丁遵循：
+
+1. **主屏永远放行**：`displayId == Display.DEFAULT_DISPLAY` 不改返回值；
+2. **无法判断时放行**：`displayId == null` 不冒险；
+3. **页面级修改**：首页和通讯录分别处理，不全局压平；
+4. **不写微信数据**：不清除 `Main_top_marign`，只忽略其虚拟屏结果；
+5. **失败静默降级**：混淆名变化时不崩溃微信；
+6. **ClassLoader 去重**：避免重复安装同一目标；
+7. **补丁相互隔离**：微信进程不安装通用状态栏资源 hook。
+
+---
+
+## 16. 工程与构建
+
+- 框架 API：libxposed API 102；
+- 工具链：AGP 9.2.1、Gradle 9.4.1、compileSdk 37；
+- 设置同步：libxposed remote preferences；
+- 工作流：推送到 `main` / `master` 自动构建；
+- 产物：GitHub Actions → Artifacts；
+- 工作流使用 debug key 签名，升级安装需保持同一构建签名来源。
+
 本地构建：
 
 ```bash
@@ -42,24 +830,22 @@
 
 ## 安装
 
-1. 安装 APK，在 LSPosed 管理器里启用本模块。
-2. 在模块作用域里勾选目标应用（微信 / 起点读书 / Telegram 系）。
-3. 重启目标应用。
-4. 打开本 App 的界面，按需开关三个补丁。
+1. 安装 APK；
+2. 在 LSPosed 启用模块；
+3. 作用域勾选微信及需要修复的其他应用；
+4. 完整结束目标应用进程后重新启动；
+5. 微信测试必须覆盖冷启动小窗和展开后缩回。
 
 ## 与 Z-Flow 的关系
 
-本仓库是从 Z-Flow 中提取的补丁集合，**不替代** Z-Flow。两个模块可以共存，但三个补丁的开关需各自管理。
+本仓库是从 Z-Flow 中提取的补丁集合，不替代 Z-Flow。两者可以共存，但兼容性补丁应只由本模块管理，避免重复 hook。
 
-Z-Flow 上游已通过 [PR #1](https://github.com/ldbsmh/Z-Flow/pull/1) 移除这三项修复，把功能完整移交给本模块。上游合并后，Z-Flow 不再提供这三个开关；此前开启过修复的用户，请在本模块中重新开启。
+Z-Flow 上游已通过 [PR #1](https://github.com/ldbsmh/Z-Flow/pull/1) 移除这三项修复，把功能移交给本模块。
 
 ## 许可
 
-本项目是 Z-Flow 的衍生作品，沿用其许可证：**GNU General Public License v3.0 or later**（见 [LICENSE](LICENSE)）。
+本项目是 Z-Flow 的衍生作品，沿用 **GNU General Public License v3.0 or later**（见 [LICENSE](LICENSE)）。
 
 - Copyright (C) 2021-2022 sunshine0523
 - Copyright (C) 2023 DtHnAme
 - Copyright (C) 2024-2026 relimus
-
-本程序为自由软件：你可以根据 GNU 通用公共许可证（由自由软件基金会发布）的条款，按第 3 版或（由你选择）任何更新版本重新分发和/或修改。本程序的分发是希望它有用，但没有任何保证；甚至没有对适销性或特定用途适用性的默示保证。详见 GNU 通用公共许可证。
-
