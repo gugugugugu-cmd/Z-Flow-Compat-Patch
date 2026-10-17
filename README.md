@@ -51,6 +51,8 @@
 
 本仓库是从 Z-Flow 中提取的补丁集合，**不替代** Z-Flow。两个模块可以共存，但三个补丁的开关需各自管理。
 
+Z-Flow 上游已通过 [PR #1](https://github.com/ldbsmh/Z-Flow/pull/1) 移除这三项修复，把功能完整移交给本模块。上游合并后，Z-Flow 不再提供这三个开关；此前开启过修复的用户，请在本模块中重新开启。
+
 ## 许可
 
 本项目是 Z-Flow 的衍生作品，沿用其许可证：**GNU General Public License v3.0 or later**（见 [LICENSE](LICENSE)）。
