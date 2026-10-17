@@ -13,33 +13,48 @@ import java.lang.reflect.Method
  *
  * ## 问题
  *
- * 微信在小窗（虚拟屏）里顶部会出现两条相同的标题栏：上层可点击，下层点不动。
- * 反编译定位到 `ConversationListView` 的滚动偏移计算：
+ * 微信在小窗（虚拟屏）里顶部会出现两条相同的标题栏：上层可点击，下层点不动；
+ * 通讯录/发现等 tab 页顶部被拉宽或功能项被顶出屏幕。
+ *
+ * 反编译微信 8.0.79 确认：主界面（微信 tab / 通讯录 / 发现）的状态栏高度全部来自
+ * `com.tencent.mm.ui.ol#i(Context, int)`（WeUIToolHelper.getStatusBarHeight）：
  *
  * ```
- * int statusBarHeight = gl.h(context);     // ← 本补丁的 hook 目标
- * int actionBarTop = this.E;
- * if (actionBarTop <= 0 && !this.J) {
- *     actionBarTop = statusBarHeight;      // ActionBar 贴顶时按状态栏高度兜底
- * }
- * this.s = gl.a(context) + actionBarTop;   // scrollOffset
- * setSelectionFromTop(1, this.s);          // 面板头部据此上移
+ * MainUI.K0 / MainUI.C0（微信 tab）、FindMoreFriendsUI.a1/N1（发现）、
+ * BaseAddressUIFragment.I0/M0（通讯录）… 全部调用 ol.i(ctx, -1)
  * ```
  *
- * 主屏上 ActionBar 被状态栏推下来（`E = 88`），兜底不触发，`s` 正确，任务栏面板完全藏住。
- * 虚拟屏上没有状态栏，ActionBar 永远贴顶（`E = 0`），兜底每次都注入一个不存在的状态栏
- * 高度 → `s` 偏大 136px → 任务栏面板底部那条 bar 露在屏内。因为面板逻辑上已关闭，
- * 所以不接收触摸，看起来就是"重复了一层、还点不动"。
+ * `ol.i` 内部：
+ *
+ * 1. 先尝试从 `WindowInsets` 类取状态栏高度（`n3.g3.a(1).b`），取不到为 0；
+ * 2. 若该值 < 25dp，走 `ol.k` 反射读 `com.android.internal.R$dimen.status_bar_height`
+ *    （真机 124px）；
+ * 3. 微信自己的 `[fixStatusBarHeight]` 用
+ *    `displayHeight - windowVisibleFrame.height` 估算真实状态栏高度：
+ *    - 主屏：估算 ≈ 124 → 与系统值一致，正常；
+ *    - 虚拟屏：无系统状态栏 → 估算 ≈ 0 → `if-le` 不采用 → 仍返回 124px；
+ *
+ * 于是小窗里微信把 124px 的“幽灵状态栏高度”注入所有 tab 页布局 → 顶部出现
+ * 双标题栏 / 空额头 / 功能项被顶下去 / 不可点击的第二行。
+ *
+ * ## 旧实现为什么失效
+ *
+ * 旧实现 hook `ol.h(Context)`。反编译 8.0.79 的 xref 显示 `ol.h` 只被
+ * 视频号(Finder)、设置、webview 等**次级页面**调用，主界面三个 tab 全部走
+ * `ol.i(Context, int)`。所以旧补丁“挂钩成功但从不触发”——日志里没有任何
+ * “非主屏 → 状态栏高度置 0”的运行记录，与用户观察完全吻合。
  *
  * ## 做法
  *
- * hook 微信的状态栏高度入口，**非主屏时返回 0**：
- * - 虚拟屏：`E = 0` → 兜底拿到 0 → `s = gl.a` = ActionBar 高度 → 面板完全藏住
- * - 主屏：`E = 88 ≠ 0` → 兜底不触发 → 返回值用不到 → **正常使用零影响**
+ * hook `ol.i(Context, int)`，非主屏时返回 0：
+ * - 小窗：所有主界面 tab 的状态栏高度变为 0 → 不预留幽灵状态栏 → 双标题栏消失；
+ * - 主屏：返回值不被使用或与实际一致，行为不变。
+ *
+ * `ol.i` 的第二个参数在全部主界面调用点都是 `-1`（fallback 值），hook 时不必校验。
  *
  * ## 混淆名会随版本变化
  *
- * 类名 `com.tencent.mm.ui.gl` 与方法名 `h` 都是混淆产物。微信升级后可能整体改名，
+ * 类名 `com.tencent.mm.ui.ol` 与方法名 `i` 都是混淆产物。微信升级后可能整体改名，
  * 补丁会"静默跳过"（行为与不装补丁一致）。打开设置里的**详细日志**后，
  * LSPosed 日志会完整打印探测过程，可直接判断是类名变了还是方法名变了。
  */
@@ -50,10 +65,9 @@ object WeChatStatusBarFix {
     /**
      * 候选类名：混淆名随版本变化，按顺序尝试，命中即止。
      *
-     * - `ui.ol`：8.0.79（当前实测版本）命中，方法名仍为 `h(Context)`，
-     *   内部走 `ml.a(ctx, android:dimen/status_bar_height)` → `ol.i` 换算。
-     * - `ui.gl`：8.0.5x 及更早版本的历史名。
-     * - `ui.gk` / `ui.gm`：邻近版本兜底。
+     * - `ui.ol`：8.0.79（当前实测版本）命中，`i(Context,int)` 为状态栏高度主入口
+     *   （主界面三个 tab 全部走它；`h(Context)` 只是次级页面的薄包装）。
+     * - `ui.gl` / `ui.gk` / `ui.gm`：8.0.5x 及更早版本的历史名，保留兜底。
      */
     private val CANDIDATE_CLASSES = listOf(
         "com.tencent.mm.ui.ol",
@@ -62,8 +76,11 @@ object WeChatStatusBarFix {
         "com.tencent.mm.ui.gm",
     )
 
-    /** 目标方法名：`int h(Context)` */
-    private const val TARGET_METHOD = "h"
+    /** 目标方法名：`int i(Context, int)` —— 微信全站状态栏高度主入口 */
+    private const val TARGET_METHOD = "i"
+
+    /** 兜底方法名：`int h(Context)` —— 旧版本 / 次级页面入口 */
+    private const val FALLBACK_METHOD = "h"
 
     fun install(module: XposedModule, classLoader: ClassLoader, pkg: String) {
         if (pkg != "com.tencent.mm") return
@@ -88,6 +105,7 @@ object WeChatStatusBarFix {
             // 详细日志：把这个类里所有同名方法签名打出来，方便确认参数是否变了
             logCandidateMethods(clazz, className)
 
+            // 优先 hook 主入口 i(Context, int)；失败再尝试兜底 h(Context)
             val method = resolveTarget(clazz, className) ?: continue
             val ok = hookMethod(module, method, className)
             if (ok) {
@@ -104,24 +122,26 @@ object WeChatStatusBarFix {
         }
     }
 
-    /** 优先精确匹配 `h(Context)`，失败再按"名字 + 单个 Context 参数"宽松匹配。 */
+    /** 优先精确匹配 `i(Context, int)`，失败再尝试 `h(Context)`。 */
     private fun resolveTarget(clazz: Class<*>, className: String): Method? {
-        val exact = Reflect.findMethodExact(clazz, TARGET_METHOD, Context::class.java)
+        // 主入口：int i(Context, int)。第二个参数为 fallback 值（主界面传 -1）。
+        val exact = Reflect.findMethodExact(
+            clazz, TARGET_METHOD, Context::class.java, Int::class.javaPrimitiveType
+        )
         if (exact != null) {
-            PatchLog.debug("$NAME: 精确命中 $className#$TARGET_METHOD(Context)")
+            PatchLog.debug("$NAME: 精确命中主入口 $className#$TARGET_METHOD(Context, int)")
             return exact
         }
-        PatchLog.debug("$NAME: $className 无精确方法 $TARGET_METHOD(Context)，尝试宽松匹配")
+        PatchLog.debug("$NAME: $className 无精确方法 $TARGET_METHOD(Context, int)，尝试兜底 $FALLBACK_METHOD")
 
-        val loose = Reflect.findMethods(clazz, TARGET_METHOD).firstOrNull { m ->
-            m.parameterCount == 1 && Context::class.java.isAssignableFrom(m.parameterTypes[0])
+        // 兜底：int h(Context)（旧版本 / 次级页面入口）
+        val fallback = Reflect.findMethodExact(clazz, FALLBACK_METHOD, Context::class.java)
+        if (fallback != null) {
+            PatchLog.debug("$NAME: 兜底命中 $className#$FALLBACK_METHOD(Context)")
+            return fallback
         }
-        if (loose != null) {
-            PatchLog.debug("$NAME: 宽松命中 $className#$TARGET_METHOD(${loose.parameterTypes[0].name})")
-        } else {
-            PatchLog.debug("$NAME: $className 中不存在可取的状态栏高度方法 $TARGET_METHOD")
-        }
-        return loose
+        PatchLog.debug("$NAME: $className 中不存在可取的状态栏高度方法（$TARGET_METHOD / $FALLBACK_METHOD）")
+        return null
     }
 
     private fun hookMethod(module: XposedModule, method: Method, className: String): Boolean {
@@ -134,10 +154,10 @@ object WeChatStatusBarFix {
                 }
                 patch(ctx, chain)
             }
-            PatchLog.info("$NAME: 已挂钩 $className#$TARGET_METHOD —— 非主屏时状态栏高度归零")
+            PatchLog.info("$NAME: 已挂钩 $className#${method.name} —— 非主屏时状态栏高度归零")
             true
         }.onFailure {
-            PatchLog.warn("$NAME: 挂钩 $className#$TARGET_METHOD 失败", it)
+            PatchLog.warn("$NAME: 挂钩 $className#${method.name} 失败", it)
         }.getOrDefault(false)
     }
 
@@ -147,6 +167,9 @@ object WeChatStatusBarFix {
      * 注意这里用**实时查询** `Context.getDisplay()`，而不是缓存"前台显示设备"。
      * 微信被多任务上滑搬进小窗时 Activity 不会重新 resume，缓存值会停在主屏，
      * 导致判定失效。
+     *
+     * 微信所有主界面调用点传入的都是 Activity Context（MMFragment.getContext()），
+     * `ctx.display` 能实时反映窗口当前所在显示设备，两条进入小窗的路径都覆盖。
      */
     private fun patch(ctx: Context, chain: io.github.libxposed.api.XposedInterface.Chain): Any? {
         val displayId = runCatching { ctx.display?.displayId }.getOrNull()
@@ -171,9 +194,10 @@ object WeChatStatusBarFix {
     /** 详细日志：打印候选类里所有同名方法的签名。 */
     private fun logCandidateMethods(clazz: Class<*>, className: String) {
         if (!PatchLog.verbose) return
-        val methods = Reflect.findMethods(clazz, TARGET_METHOD)
+        val methods = Reflect.findMethods(clazz, TARGET_METHOD) +
+            Reflect.findMethods(clazz, FALLBACK_METHOD)
         if (methods.isEmpty()) {
-            PatchLog.debug("$NAME: $className 内无名为 $TARGET_METHOD 的方法")
+            PatchLog.debug("$NAME: $className 内无名为 $TARGET_METHOD/$FALLBACK_METHOD 的方法")
             return
         }
         methods.forEach { m ->

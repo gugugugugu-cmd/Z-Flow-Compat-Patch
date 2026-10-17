@@ -52,7 +52,14 @@ class CompatModule : XposedModule() {
         runPatch("WeChatStatusBarFix") { WeChatStatusBarFix.install(this, cl, pkg) }
 
         // 2) 通用：小窗顶部空白（任何加入作用域的应用都可能命中）
-        runPatch("StatusBarDimenFix") { StatusBarDimenFix.install(this, cl, pkg) }
+        //    微信进程必须排除：微信的状态栏高度由 WeChatStatusBarFix 统一处理，
+        //    通用补丁会把框架 status_bar_height 改 0，与微信自己的状态栏预留
+        //    逻辑打架，导致"功能项被顶部覆盖/布局错位"。
+        if (pkg != "com.tencent.mm") {
+            runPatch("StatusBarDimenFix") { StatusBarDimenFix.install(this, cl, pkg) }
+        } else {
+            PatchLog.debug("StatusBarDimenFix: pkg=$pkg 微信进程，跳过（由 WeChatStatusBarFix 统一处理）")
+        }
 
         // 3) Telegram 系：关闭画中画
         runPatch("TelegramPipDisableFix") { TelegramPipDisableFix.install(this, cl, pkg) }
