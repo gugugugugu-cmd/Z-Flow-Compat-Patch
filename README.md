@@ -849,3 +849,385 @@ Z-Flow 上游已通过 [PR #1](https://github.com/ldbsmh/Z-Flow/pull/1) 移除�
 - Copyright (C) 2021-2022 sunshine0523
 - Copyright (C) 2023 DtHnAme
 - Copyright (C) 2024-2026 relimus
+
+
+---
+
+# 起点读书与通用顶部空白修复：原理、边界与适配
+
+## 17. 起点读书问题的本质
+
+起点读书在 Z-Flow 虚拟显示屏中会出现顶部空白（俗称“宽额头”）。与微信不同，它的主要问题不是某个复杂页面容器的缓存，而是应用代码直接读取 Android 框架中的固定尺寸：
+
+```java
+int id = context.getResources().getIdentifier(
+    "status_bar_height", "dimen", "android"
+);
+int height = context.getResources().getDimensionPixelSize(id);
+```
+
+`android:dimen/status_bar_height` 是设备/系统资源。即使 Activity 被搬到一个没有系统状态栏的虚拟屏，它仍可能返回主屏尺寸，例如 124px。应用把这段高度继续作为 padding、margin 或标题栏占位，于是虚拟屏顶部出现无意义空白。
+
+对起点读书 7.9.480（`com.qidian.QDReader`，versionCode 1996）的 APK 搜索 `status_bar_height`，可以看到多个业务和组件类直接引用它，包括：
+
+```text
+com.qidian.QDReader.component.util.*
+com.qidian.QDReader.activityoptions.*
+com.qidian.QDReader.comic.ui.QDComicReadingBaseActivity
+com.qidian.QDReader.flutter.bridges.*
+com.qd.ui.component.helper.*
+com.qd.ui.component.util.*
+com.yuewen.app.base_ui.breakpoints.floatingwindow.FloatingWindowRootView
+```
+
+这说明问题不是单个混淆工具方法，而是许多页面和组件共同使用框架资源。逐个 hook 业务类既脆弱又不完整，因此选择稳定的框架出口更合适。
+
+## 18. 通用修复的 hook 点
+
+当前补丁 hook：
+
+```text
+android.content.res.Resources#getDimensionPixelSize(int)
+```
+
+执行顺序：
+
+1. 先 `chain.proceed()` 得到应用原本会收到的尺寸；
+2. 确认当前显示屏不是主屏；
+3. 确认设置中的通用顶部空白修复已开启；
+4. 确认参数资源 ID 正好等于：
+
+```text
+android:dimen/status_bar_height
+```
+
+5. 仅该资源返回 0；其他任何 dimen 原样返回。
+
+伪代码：
+
+```kotlin
+val result = chain.proceed()
+if (currentDisplayId == Display.DEFAULT_DISPLAY) return result
+if (!enabled) return result
+if (requestedId != statusBarHeightResId) return result
+return 0
+```
+
+资源 ID 通过当前进程 Resources 动态解析并缓存：
+
+```kotlin
+res.getIdentifier("status_bar_height", "dimen", "android")
+```
+
+不硬编码 `0x0105....`，避免 Android 版本或资源表变化。
+
+## 19. 为什么要同时追踪 `onResume` 与 `onMovedToDisplay`
+
+`Resources` 本身没有公开的 `getDisplay()` 可供 hook 点直接判断所属显示屏，因此补丁维护一个进程内的 `currentDisplayId`。
+
+Z-Flow 有两种常见进入小窗的路径：
+
+| 进入方式 | Activity 行为 | 追踪信号 |
+| --- | --- | --- |
+| 直接以小窗启动 | Activity 新建/恢复 | `Activity.onResume()` |
+| 从最近任务把现有任务搬入小窗 | Activity 不一定重建或 resume | `Activity.onMovedToDisplay(int, Configuration)` |
+
+仅 hook `onResume` 会漏掉第二种路径。最终实现：
+
+```text
+onResume：chain.proceed 后读取 activity.display.displayId
+onMovedToDisplay：chain.proceed 前读取参数 displayId
+```
+
+`onMovedToDisplay` 必须先更新缓存再放行，确保任务搬屏后的第一次资源查询就使用新 displayId。
+
+默认值是主屏 `0`。如果两个生命周期 hook 都无法安装，补丁宁可不生效，也不在未知状态下误改主屏。
+
+## 20. 为什么这是“通用修复”，但必须排除微信
+
+这个框架级 hook 适用于满足以下条件的应用：
+
+- 虚拟屏没有系统状态栏；
+- 应用直接读取 `android:dimen/status_bar_height`；
+- 读取结果只用于预留顶部空白；
+- 页面没有另一套复杂的 Insets、遮罩、缓存和多窗口布局状态。
+
+起点读书符合这些条件。微信不符合：微信同时存在 WindowInsets、`ol.i()`、列表 margin、status-bar mask、页面 padding 和 `Main_top_marign` 缓存。把框架资源统一改 0 会导致部分页面有安全空间、部分页面没有，形成覆盖和跳变。
+
+因此通用不等于无差别安装。微信进程必须按真实 `processName` 排除，包括其随后加载的 WebView PackageReady。
+
+## 21. 通用补丁边界
+
+当前只覆盖：
+
+```text
+Resources.getDimensionPixelSize(int)
+```
+
+以下路径不受影响：
+
+```text
+Resources.getDimension(int)
+Resources.getDimensionPixelOffset(int)
+WindowInsets
+WindowInsetsCompat
+getWindowVisibleDisplayFrame
+硬编码 dp/px
+应用自定义资源（非 android 包）
+服务端下发或 SharedPreferences 缓存高度
+```
+
+如果新应用仍有顶部空白，先查它具体使用哪条路径，不要盲目扩大框架 hook。框架 hook 越宽，误伤概率越高。
+
+## 22. 起点读书/其他应用升级后的适配步骤
+
+1. 打开详细日志并冷启动小窗；
+2. 确认日志有：
+
+```text
+StatusBarDimenFix: 前台显示设备切换 0 → N
+StatusBarDimenFix: 解析到 status_bar_height 资源 id=...
+StatusBarDimenFix: displayId=N 非主屏，status_bar_height X → 0
+```
+
+3. 若有日志但 UI 不变，搜索 APK：
+
+```text
+status_bar_height
+getDimensionPixelSize
+getDimensionPixelOffset
+getDimension
+WindowInsets
+setPadding
+topMargin
+```
+
+4. 判断目标页面是否仍走 `getDimensionPixelSize(int)`；
+5. 若改成其他框架 API，优先增加**精确资源 ID + 非主屏 + 目标进程**条件，不应直接全局归零所有 dimen；
+6. 测试冷启动小窗、主屏搬入小窗、小窗展开/缩回、阅读页/漫画页/Flutter 页面和登录页；
+7. 主屏必须无变化。
+
+### 日志判读
+
+| 日志/现象 | 含义 |
+| --- | --- |
+| `显示设备切换 0 → N` | 小窗追踪正常 |
+| `status_bar_height X → 0` | 资源 hook 命中 |
+| 始终 displayId=0 | 生命周期路径没覆盖或任务未真正进入虚拟屏 |
+| 没有解析资源 ID | 进程资源表或 API 路径变化 |
+| 命中日志存在但页面仍空白 | 空白由另一种 API、硬编码值或页面容器造成 |
+| 主屏顶部异常 | display 缓存被其他 Activity/多显示屏状态污染，应缩小作用域 |
+
+---
+
+# Telegram 系小窗画面修复：原理、代价与适配
+
+## 23. Telegram 问题的本质
+
+Telegram 播放视频时可能进入 Android 系统画中画（Picture-in-Picture，PiP）。如果用户上滑离开视频后，再从最近任务把该任务搬到 Z-Flow 虚拟屏，任务已经处于 PiP 状态。
+
+虚拟屏中没有完整系统 UI 来承载 PiP 窗口，结果可能变成：
+
+```text
+角落里一个很小的视频画面 + 其余区域空白
+```
+
+问题发生顺序是：
+
+```text
+主屏进入 PiP
+→ 任务卡进入最近任务
+→ 整个 PiP 状态任务被搬到虚拟屏
+→ 虚拟屏无法正常承载 PiP
+```
+
+所以等应用到达虚拟屏再修已经太晚。
+
+## 24. 为什么不能只在小窗里退出 PiP
+
+Android 公共 SDK 没有通用的：
+
+```text
+Activity.exitPictureInPictureMode()
+```
+
+应用进入 PiP 的时刻发生在主屏，而且应用无法提前知道用户接下来是否会把任务搬进 Z-Flow 小窗。仅根据 `displayId != 0` 阻止 PiP 无法拦住“先主屏 PiP，后搬屏”的路径。
+
+最终策略只能是：
+
+```text
+对 Telegram 系应用完全禁用 PiP
+```
+
+代价是 Telegram 在主屏也不再支持系统画中画。模块设置开关关闭后可恢复原行为。
+
+## 25. 为什么不能只 hook `enterPictureInPictureMode()`
+
+Android 12 / API 31 起支持自动进入 PiP：
+
+```java
+PictureInPictureParams.Builder()
+    .setAutoEnterEnabled(true)
+```
+
+Telegram 在新系统上的逻辑近似：
+
+```java
+if (useAutoEnterInPictureInPictureMode()) {
+    return; // 不调用 Activity.enterPictureInPictureMode()
+}
+activity.enterPictureInPictureMode(params);
+```
+
+因此 API 31+ 上仅拦截：
+
+```text
+Activity.enterPictureInPictureMode(...)
+```
+
+可能完全没有效果，因为系统根据 `autoEnterEnabled` 自动切换 PiP，应用没有显式调用进入方法。
+
+## 26. Telegram 最终 hook 方案
+
+### 主手段：替换 PiP 参数
+
+hook：
+
+```text
+Activity.setPictureInPictureParams(PictureInPictureParams)
+```
+
+将 Telegram 提交的参数替换为：
+
+```kotlin
+PictureInPictureParams.Builder()
+    .setAutoEnterEnabled(false) // API 31+
+    .build()
+```
+
+然后继续调用原方法：
+
+```kotlin
+chain.proceed(arrayOf(disabledParams))
+```
+
+这样系统不会在用户离开 Activity 时自动进入 PiP。
+
+### 兜底：拒绝手动进入
+
+同时 hook `Activity.enterPictureInPictureMode` 的所有重载，直接返回 `false`，覆盖：
+
+- API 30 及更低版本；
+- Telegram fork 的旧代码；
+- 仍主动调用手动进入接口的路径。
+
+组合结果：
+
+```text
+自动 PiP → autoEnterEnabled=false
+手动 PiP → enterPictureInPictureMode 返回 false
+```
+
+## 27. 如何识别 Telegram fork
+
+不能只按官方包名判断，因为 Telegram fork 包名很多。当前通过进程中稳定、不混淆的标记类识别：
+
+```text
+org.telegram.messenger.AndroidUtilities
+org.telegram.ui.LaunchActivity
+```
+
+任一存在即判定为 Telegram 系。
+
+曾考虑使用：
+
+```text
+org.telegram.messenger.pip.PipActivityHandler
+```
+
+但 Telegram 13.x 起相关 Kotlin 类可能被 R8 完全混淆，实测 PiP 逻辑可落到类似 `le.c` / `le.f` 的混淆类，不适合作为稳定标记。
+
+标记类检测比包名更适合覆盖官方版和 fork；但若某 fork 重命名整个 `org.telegram` 命名空间，则需要为该 fork补充稳定标记类。
+
+## 28. Telegram 日志与验证
+
+正常安装日志：
+
+```text
+TelegramPipDisable: pkg=... 确认为 Telegram 系（标记类 ...），开始安装
+TelegramPipDisable: 已挂钩 setPictureInPictureParams
+TelegramPipDisable: enterPictureInPictureMode 重载数=N
+TelegramPipDisable: 安装完成 —— 本进程不再进入画中画
+```
+
+视频页面更新参数时：
+
+```text
+TelegramPipDisable: setPictureInPictureParams → autoEnterEnabled=false
+```
+
+若走手动路径：
+
+```text
+TelegramPipDisable: enterPictureInPictureMode(...) → 拒绝进入
+```
+
+测试流程：
+
+1. Telegram 内播放视频；
+2. 上滑离开视频 Activity / 进入最近任务；
+3. 确认主屏未进入系统 PiP；
+4. 从最近任务打开 Z-Flow 小窗；
+5. 确认不再出现角落小画面；
+6. 关闭模块中的 Telegram 开关，重启 Telegram，确认 PiP 可恢复。
+
+## 29. Telegram 升级或 fork 适配
+
+### 标记类失效
+
+日志：
+
+```text
+非 Telegram 系（未找到 AndroidUtilities, LaunchActivity），跳过
+```
+
+处理：
+
+1. 反编译目标 fork；
+2. 找长期稳定、启动时必加载且不混淆的类；
+3. 优先选择 Application、LaunchActivity、大型公共工具类；
+4. 加入 `TELEGRAM_MARKER_CLASSES`。
+
+### hook 已安装但仍进入 PiP
+
+检查：
+
+- 是否出现 `setPictureInPictureParams → autoEnterEnabled=false`；
+- fork 是否绕过 Activity API，直接与系统服务交互；
+- 是否在模块加载前就配置了 PiP；
+- 是否使用独立视频进程且该进程未进入 LSPosed 作用域；
+- Android 新版本是否引入新的 PiP 参数或 API；
+- 目标是不是应用内悬浮播放器，而非系统 PiP。
+
+应用内悬浮播放器不属于 Android PiP，拦系统 API不会影响它。
+
+### 安全边界
+
+- 仅标记为 Telegram 系的进程安装 hook；
+- 开关关闭时实时放行，不必卸载模块；
+- `disabledParams` 只关闭自动进入，不伪造其他业务参数；
+- 手动入口返回 `false`，符合 Android API“未进入 PiP”的语义；
+- 已进入 PiP 后无法靠此补丁退出，必须在进入之前拦截；
+- 主屏 PiP 同样会被禁用，这是设计代价而不是 bug。
+
+---
+
+## 30. 三类补丁的设计差异
+
+| 应用/问题 | 根因 | 最佳 hook 层级 | 为什么 |
+| --- | --- | --- | --- |
+| 微信 | 页面级高度、遮罩、缓存、Tinker 类替换共同作用 | 微信业务方法 + 页面方法 | 框架资源 hook 过宽，会破坏其他页面 |
+| 起点读书 | 多组件直接读取固定系统 `status_bar_height` | `Resources.getDimensionPixelSize(int)` 精确资源 ID | 调用点多，框架出口稳定且语义一致 |
+| Telegram | 任务在主屏已进入系统 PiP，搬屏后状态被带入 | `setPictureInPictureParams` + `enterPictureInPictureMode` | 必须在进入 PiP 前阻止，等到虚拟屏再处理已来不及 |
+
+通用经验：选择最窄、但能覆盖全部真实调用路径的 hook 层级。不是越底层越好，也不是业务层永远更安全；要看错误语义是否在所有调用者中一致。
