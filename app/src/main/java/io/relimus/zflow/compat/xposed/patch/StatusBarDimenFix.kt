@@ -154,10 +154,14 @@ object StatusBarDimenFix {
      * 开小窗的场景。签名固定为 (int, Configuration)，跨版本稳定。
      */
     private fun hookOnMovedToDisplay(module: XposedModule, activityClass: Class<*>): Boolean {
+        val intPrimitive = Int::class.javaPrimitiveType ?: run {
+            PatchLog.debug("$NAME: 无法取得 int 原始类型，跳过 onMovedToDisplay")
+            return false
+        }
         val method = Reflect.findMethodExact(
             activityClass,
             "onMovedToDisplay",
-            Int::class.javaPrimitiveType,
+            intPrimitive,
             android.content.res.Configuration::class.java,
         ) ?: run {
             PatchLog.debug("$NAME: Activity.onMovedToDisplay(int, Configuration) 未找到")
