@@ -3,3 +3,6 @@ version=1.0.0
 versionCode=1
 author=Z-Flow Compat Patch
 description=微信小窗标题栏重复修复 / 小窗顶部空白修复 / 关闭 Telegram 画中画
+minApiVersion=102
+targetApiVersion=102
+staticScope=false
