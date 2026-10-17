@@ -1,6 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#3F51B5</color>
-    <color name="primary_dark">#303F9F</color>
-    <color name="accent">#FF4081</color>
+    <!-- 品牌色：沉稳深蓝，用于 Switch 开启态与强调元素 -->
+    <color name="brand">#007AFF</color>
+    <color name="brand_dark">#0066D6</color>
+
+    <!-- 页面背景：极浅灰，衬托白色卡片 -->
+    <color name="page_background">#F2F2F7</color>
+
+    <!-- 卡片与内容 -->
+    <color name="card_background">#FFFFFF</color>
+    <color name="divider">#E5E5EA</color>
+
+    <!-- 文字 -->
+    <color name="text_primary">#1C1C1E</color>
+    <color name="text_secondary">#8E8E93</color>
+    <color name="text_tertiary">#C7C7CC</color>
+
+    <!-- 图标描边 -->
+    <color name="icon_stroke">#8E8E93</color>
+
+    <!-- Switch 关闭态轨道（浅灰，由主题色派生） -->
+    <color name="switch_off_track">#E5E5EA</color>
+    <color name="switch_off_thumb">#FFFFFF</color>
 </resources>

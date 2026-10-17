@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    可复用的设置项：左侧约 70% 标题 + 描述，右侧 Switch 顶部对齐。
+    供 include 使用，宿主通过 findViewById 找到子控件后由代码填充内容。
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:gravity="center_vertical"
+    android:minHeight="@dimen/item_min_height"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/card_padding_h"
+    android:paddingEnd="@dimen/card_padding_h"
+    android:paddingTop="@dimen/item_padding_v"
+    android:paddingBottom="@dimen/item_padding_v">
+
+    <!-- 线框图标 -->
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="@dimen/item_icon_size"
+        android:layout_height="@dimen/item_icon_size"
+        android:layout_gravity="center_vertical"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no" />
+
+    <!-- 标题 + 描述（左侧弹性区，约 70%） -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="12dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/item_title_size" />
+
+        <TextView
+            android:id="@+id/summary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="3dp"
+            android:lineSpacingExtra="@dimen/item_summary_line_spacing"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/item_summary_size" />
+    </LinearLayout>
+
+    <!-- 右侧开关：顶部对齐标题，尺寸由 track/thumb drawable 收紧 -->
+    <androidx.appcompat.widget.SwitchCompat
+        android:id="@+id/switch_widget"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="2dp"
+        android:minWidth="0dp"
+        android:padding="0dp"
+        app:switchMinWidth="0dp"
+        app:thumb="@drawable/switch_thumb"
+        app:track="@drawable/switch_track" />
+</LinearLayout>

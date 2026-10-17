@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+    <!-- 小窗顶部空白：显示器 + 下移箭头（Material outline monitor + arrow_downward） -->
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/icon_stroke"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M20,3H4a1,1 0,0 0,-1 1v10a1,1 0,0 0,1 1h16a1,1 0,0 0,1,-1V4a1,1 0,0 0,-1,-1z" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/icon_stroke"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,8v6M9,11l3,3 3,-3" />
+    <path
+        android:fillColor="@android:color/transparent"
+        android:strokeColor="@color/icon_stroke"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M8,21h8" />
+</vector>

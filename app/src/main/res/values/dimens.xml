@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 页面留白 -->
+    <dimen name="screen_margin">16dp</dimen>
+    <dimen name="screen_margin_top">8dp</dimen>
+
+    <!-- 卡片 -->
+    <dimen name="card_radius">16dp</dimen>
+    <dimen name="card_padding_h">16dp</dimen>
+    <dimen name="card_padding_v">4dp</dimen>
+
+    <!-- 分组标题 -->
+    <dimen name="group_title_size">13sp</dimen>
+    <dimen name="group_title_margin_top">20dp</dimen>
+    <dimen name="group_title_margin_bottom">8dp</dimen>
+
+    <!-- 设置项 -->
+    <dimen name="item_padding_v">12dp</dimen>
+    <dimen name="item_title_size">16sp</dimen>
+    <dimen name="item_summary_size">13sp</dimen>
+    <dimen name="item_summary_line_spacing">4dp</dimen>
+    <dimen name="item_icon_size">22dp</dimen>
+    <dimen name="item_min_height">56dp</dimen>
+</resources>

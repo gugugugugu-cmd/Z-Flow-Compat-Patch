@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Switch 滑块：白色，带极轻微描边 -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="oval">
+            <size android:height="26dp" android:width="26dp" />
+            <solid android:color="@color/switch_off_thumb" />
+            <stroke android:width="0.5dp" android:color="#12000000" />
+        </shape>
+    </item>
+</selector>

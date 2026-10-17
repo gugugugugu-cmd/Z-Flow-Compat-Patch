@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 分组标题：中性灰、小字号、加字间距 -->
+    <style name="GroupTitle">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/group_title_margin_top</item>
+        <item name="android:layout_marginBottom">@dimen/group_title_margin_bottom</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">@dimen/group_title_size</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:letterSpacing">0.05</item>
+    </style>
+
+    <!-- 卡片容器：纯白背景、16dp 圆角、极轻阴影 -->
+    <style name="CardContainer">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/bg_card</item>
+        <item name="android:elevation">1dp</item>
+        <item name="android:paddingTop">@dimen/card_padding_v</item>
+        <item name="android:paddingBottom">@dimen/card_padding_v</item>
+    </style>
+
+    <!-- 设置项之间的极细分隔线 -->
+    <style name="ItemDivider">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">1px</item>
+        <item name="android:layout_marginStart">@dimen/card_padding_h</item>
+        <item name="android:layout_marginEnd">@dimen/card_padding_h</item>
+        <item name="android:background">@color/divider</item>
+    </style>
+</resources>
