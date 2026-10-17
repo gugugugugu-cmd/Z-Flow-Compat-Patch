@@ -48,15 +48,29 @@ import java.util.concurrent.atomic.AtomicBoolean
  *
  * ## 只对 Telegram 系生效
  *
- * 不按包名判断（fork 的包名千奇百怪），而是检测进程里是否存在 Telegram 的
- * PiP 类 `org.telegram.messenger.pip.PipActivityHandler`。
+ * 不按包名判断（fork 的包名千奇百怪），而是检测进程里是否存在 Telegram 中
+ * **稳定不混淆**的类（见 [TELEGRAM_MARKER_CLASSES]）。
  */
 object TelegramPipDisableFix {
 
     private const val NAME = "TelegramPipDisable"
 
-    /** 用 Telegram 自己的类名做识别，覆盖官方版与各种 fork。 */
-    private const val TELEGRAM_PIP_CLASS = "org.telegram.messenger.pip.PipActivityHandler"
+    /**
+     * 用 Telegram 自己的类名做识别，覆盖官方版与各种 fork。
+     *
+     * 注意：`org.telegram.messenger.pip.PipActivityHandler` 是 Telegram 自己的
+     * Kotlin 类，13.x 起被 R8 全量混淆（实测该包已不存在，PiP 逻辑落到
+     * `le.c` / `le.f`），不能再用作标记。改用 Telegram 中**稳定不混淆**的类：
+     *
+     * - `org.telegram.messenger.AndroidUtilities`：工具类，长期未混淆
+     * - `org.telegram.ui.LaunchActivity`：主 Activity，长期未混淆
+     *
+     * 两者任一存在即判定为 Telegram 系。按顺序尝试，命中即止。
+     */
+    private val TELEGRAM_MARKER_CLASSES = listOf(
+        "org.telegram.messenger.AndroidUtilities",
+        "org.telegram.ui.LaunchActivity",
+    )
 
     private val installed = AtomicBoolean(false)
 
@@ -77,13 +91,16 @@ object TelegramPipDisableFix {
             return
         }
 
-        // 识别：进程里是否存在 Telegram 的 PiP 类
-        val marker = Reflect.findClass(TELEGRAM_PIP_CLASS, classLoader)
+        // 识别：进程里是否存在 Telegram 的稳定标记类
+        val marker = TELEGRAM_MARKER_CLASSES.firstOrNull { Reflect.findClass(it, classLoader) != null }
         if (marker == null) {
-            PatchLog.debug("$NAME: pkg=$pkg 非 Telegram 系（未找到 $TELEGRAM_PIP_CLASS），跳过")
+            PatchLog.debug(
+                "$NAME: pkg=$pkg 非 Telegram 系" +
+                    "（未找到 ${TELEGRAM_MARKER_CLASSES.joinToString()}），跳过"
+            )
             return
         }
-        PatchLog.info("$NAME: pkg=$pkg 确认为 Telegram 系，开始安装")
+        PatchLog.info("$NAME: pkg=$pkg 确认为 Telegram 系（标记类 $marker），开始安装")
 
         val activityClass = Reflect.findClass("android.app.Activity", classLoader) ?: run {
             PatchLog.warn("$NAME: android.app.Activity 未找到")

@@ -47,10 +47,17 @@ object WeChatStatusBarFix {
 
     private const val NAME = "WeChatStatusBarFix"
 
-    /** 候选类名：混淆名随版本变化，按顺序尝试，命中即止。 */
+    /**
+     * 候选类名：混淆名随版本变化，按顺序尝试，命中即止。
+     *
+     * - `ui.ol`：8.0.79（当前实测版本）命中，方法名仍为 `h(Context)`，
+     *   内部走 `ml.a(ctx, android:dimen/status_bar_height)` → `ol.i` 换算。
+     * - `ui.gl`：8.0.5x 及更早版本的历史名。
+     * - `ui.gk` / `ui.gm`：邻近版本兜底。
+     */
     private val CANDIDATE_CLASSES = listOf(
+        "com.tencent.mm.ui.ol",
         "com.tencent.mm.ui.gl",
-        // 历史/邻近版本的常见混淆名，作为兜底候选
         "com.tencent.mm.ui.gk",
         "com.tencent.mm.ui.gm",
     )
@@ -136,6 +143,10 @@ object WeChatStatusBarFix {
 
     /**
      * 判定与改写。返回 0 表示"虚拟屏上不存在状态栏"；否则一律放行原逻辑。
+     *
+     * 注意这里用**实时查询** `Context.getDisplay()`，而不是缓存"前台显示设备"。
+     * 微信被多任务上滑搬进小窗时 Activity 不会重新 resume，缓存值会停在主屏，
+     * 导致判定失效。
      */
     private fun patch(ctx: Context, chain: io.github.libxposed.api.XposedInterface.Chain): Any? {
         val displayId = runCatching { ctx.display?.displayId }.getOrNull()
