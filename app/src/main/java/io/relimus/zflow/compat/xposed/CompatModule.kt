@@ -23,7 +23,12 @@ import io.relimus.zflow.compat.xposed.util.PatchSettings
  */
 class CompatModule : XposedModule() {
 
+    /** 当前宿主进程名；同一微信进程稍后还会收到 WebView 的 PackageReady。 */
+    @Volatile
+    private var hostProcessName: String = ""
+
     override fun onModuleLoaded(param: ModuleLoadedParam) {
+        hostProcessName = param.processName
         PatchLog.attach(this)
         PatchLog.info(
             "模块载入: process=${param.processName} " +
@@ -55,10 +60,15 @@ class CompatModule : XposedModule() {
         //    微信进程必须排除：微信的状态栏高度由 WeChatStatusBarFix 统一处理，
         //    通用补丁会把框架 status_bar_height 改 0，与微信自己的状态栏预留
         //    逻辑打架，导致"功能项被顶部覆盖/布局错位"。
-        if (pkg != "com.tencent.mm") {
+        val isWeChatProcess = hostProcessName == "com.tencent.mm" ||
+            hostProcessName.startsWith("com.tencent.mm:")
+        if (!isWeChatProcess) {
             runPatch("StatusBarDimenFix") { StatusBarDimenFix.install(this, cl, pkg) }
         } else {
-            PatchLog.debug("StatusBarDimenFix: pkg=$pkg 微信进程，跳过（由 WeChatStatusBarFix 统一处理）")
+            PatchLog.debug(
+                "StatusBarDimenFix: process=$hostProcessName pkg=$pkg 位于微信进程，" +
+                    "跳过（防止 WebView 的二次 PackageReady 绕过排除）"
+            )
         }
 
         // 3) Telegram 系：关闭画中画

@@ -7,6 +7,8 @@ import io.relimus.zflow.compat.xposed.util.PatchLog
 import io.relimus.zflow.compat.xposed.util.PatchSettings
 import io.relimus.zflow.compat.xposed.util.Reflect
 import java.lang.reflect.Method
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * 微信小窗双标题栏修复（per-app 补丁）。
@@ -82,6 +84,15 @@ object WeChatStatusBarFix {
     /** 兜底方法名：`int h(Context)` —— 旧版本 / 次级页面入口 */
     private const val FALLBACK_METHOD = "h"
 
+    /** 微信 Tinker 热更新加载器；补丁 dex 会替换 base.apk 里的 ui.ol。 */
+    private const val TINKER_LOADER = "com.tencent.tinker.loader.TinkerLoader"
+
+    /** 每个实际 ClassLoader 只安装一次，避免 base 与 Tinker 回调重复挂钩。 */
+    private val hookedLoaders = ConcurrentHashMap.newKeySet<ClassLoader>()
+
+    /** TinkerLoader.tryLoad 仅需挂一次。 */
+    private val tinkerHookInstalled = AtomicBoolean(false)
+
     fun install(module: XposedModule, classLoader: ClassLoader, pkg: String) {
         if (pkg != "com.tencent.mm") return
 
@@ -90,35 +101,68 @@ object WeChatStatusBarFix {
             return
         }
 
-        PatchLog.info("$NAME: 开始探测目标（微信进程）")
-        PatchLog.debug("$NAME: 候选类共 ${CANDIDATE_CLASSES.size} 个 -> ${CANDIDATE_CLASSES.joinToString()}")
+        installForLoader(module, classLoader, "base")
+        hookTinkerLoader(module, classLoader)
+    }
 
-        var installed = false
-        for (className in CANDIDATE_CLASSES) {
-            val clazz = Reflect.findClass(className, classLoader)
-            if (clazz == null) {
-                PatchLog.debug("$NAME: 候选类 $className 未找到（可能已改名）")
-                continue
-            }
-            PatchLog.debug("$NAME: 命中候选类 $className")
-
-            // 详细日志：把这个类里所有同名方法签名打出来，方便确认参数是否变了
-            logCandidateMethods(clazz, className)
-
-            // 优先 hook 主入口 i(Context, int)；失败再尝试兜底 h(Context)
-            val method = resolveTarget(clazz, className) ?: continue
-            val ok = hookMethod(module, method, className)
-            if (ok) {
-                installed = true
-                break
-            }
+    private fun installForLoader(module: XposedModule, classLoader: ClassLoader, source: String): Boolean {
+        if (!hookedLoaders.add(classLoader)) {
+            PatchLog.debug("$NAME: classLoader 已处理，跳过 source=$source")
+            return true
         }
 
-        if (!installed) {
-            PatchLog.warn(
-                "$NAME: 未找到可用的目标方法，补丁未生效。" +
-                    "若微信刚升级，多半是混淆名变化——请查看上面的详细日志定位。"
-            )
+        PatchLog.info("$NAME: 开始探测目标 source=$source loader=${classLoader.javaClass.name}")
+        for (className in CANDIDATE_CLASSES) {
+            val clazz = runCatching { Class.forName(className, false, classLoader) }.getOrNull()
+            if (clazz == null) {
+                PatchLog.debug("$NAME: 候选类 $className 未在 source=$source 找到")
+                continue
+            }
+            PatchLog.debug("$NAME: source=$source 命中候选类 $className loader=${clazz.classLoader.javaClass.name}")
+            logCandidateMethods(clazz, className)
+            val method = resolveTarget(clazz, className) ?: continue
+            if (hookMethod(module, method, className)) return true
+        }
+
+        hookedLoaders.remove(classLoader)
+        PatchLog.warn("$NAME: source=$source 未找到可用目标方法")
+        return false
+    }
+
+    /**
+     * 微信在 onPackageReady 之后才加载 Tinker 补丁 dex。base.apk 中的 ui.ol 虽能挂钩，
+     * 但运行时由 DelegateLastClassLoader 中的补丁类替代，因此必须在 tryLoad 返回后
+     * 对当前线程 contextClassLoader 再安装一次。
+     */
+    private fun hookTinkerLoader(module: XposedModule, classLoader: ClassLoader) {
+        if (!tinkerHookInstalled.compareAndSet(false, true)) return
+        val loaderClass = Reflect.findClass(TINKER_LOADER, classLoader) ?: run {
+            tinkerHookInstalled.set(false)
+            PatchLog.debug("$NAME: 未找到 $TINKER_LOADER，无法追踪热更新 ClassLoader")
+            return
+        }
+        val tryLoad = Reflect.findMethods(loaderClass, "tryLoad").firstOrNull { it.parameterCount == 1 } ?: run {
+            tinkerHookInstalled.set(false)
+            PatchLog.debug("$NAME: 未找到 TinkerLoader.tryLoad(Application)")
+            return
+        }
+
+        runCatching {
+            module.hook(tryLoad).intercept { chain ->
+                val result = chain.proceed()
+                val appContext = chain.getArg(0) as? Context
+                val patchLoader = runCatching { appContext?.classLoader }.getOrNull()
+                    ?: Thread.currentThread().contextClassLoader
+                if (patchLoader != null) {
+                    PatchLog.info("$NAME: Tinker 加载完成，重新探测 loader=${patchLoader.javaClass.name}")
+                    installForLoader(module, patchLoader, "tinker")
+                }
+                result
+            }
+            PatchLog.info("$NAME: 已挂钩 TinkerLoader.tryLoad，等待热更新类加载完成")
+        }.onFailure {
+            tinkerHookInstalled.set(false)
+            PatchLog.warn("$NAME: 挂钩 TinkerLoader.tryLoad 失败", it)
         }
     }
 
