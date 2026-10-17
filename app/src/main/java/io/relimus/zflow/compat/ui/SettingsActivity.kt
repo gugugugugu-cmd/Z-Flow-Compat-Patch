@@ -79,8 +79,9 @@ class SettingsActivity : AppCompatActivity() {
 
         override fun onSharedPreferenceChanged(
             sharedPreferences: SharedPreferences,
-            key: String,
+            key: String?,
         ) {
+            if (key == null) return
             if (key !in PATCH_KEYS && key !in LOG_KEYS) return
 
             val value = sharedPreferences.getBoolean(key, defaultOf(key))
