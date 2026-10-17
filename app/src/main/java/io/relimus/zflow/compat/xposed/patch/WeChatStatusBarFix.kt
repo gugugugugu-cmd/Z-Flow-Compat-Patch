@@ -121,7 +121,10 @@ object WeChatStatusBarFix {
             PatchLog.debug("$NAME: source=$source 命中候选类 $className loader=${clazz.classLoader.javaClass.name}")
             logCandidateMethods(clazz, className)
             val method = resolveTarget(clazz, className) ?: continue
-            if (hookMethod(module, method, className)) return true
+            if (hookMethod(module, method, className)) {
+                hookContactTopHeight(module, classLoader, source)
+                return true
+            }
         }
 
         hookedLoaders.remove(classLoader)
@@ -163,6 +166,61 @@ object WeChatStatusBarFix {
         }.onFailure {
             tinkerHookInstalled.set(false)
             PatchLog.warn("$NAME: 挂钩 TinkerLoader.tryLoad 失败", it)
+        }
+    }
+
+    /**
+     * 通讯录单独维护顶部高度：ActionBar + statusHeight / root.getTop +
+     * SharedPreferences(Main_top_marign)。展开窗口时缓存被写入，缩回小窗后仍会读取，
+     * 因而只有通讯录再次变宽。虚拟屏上直接返回 ActionBar 高度，忽略主屏缓存；
+     * 主屏放行原逻辑。
+     */
+    private fun hookContactTopHeight(
+        module: XposedModule,
+        classLoader: ClassLoader,
+        source: String,
+    ) {
+        val className = "com.tencent.mm.ui.contact.address.BaseAddressUIFragment"
+        val clazz = runCatching { Class.forName(className, false, classLoader) }.getOrNull() ?: run {
+            PatchLog.debug("$NAME: source=$source 未找到通讯录类 $className")
+            return
+        }
+        val method = Reflect.findMethodExact(clazz, "I0") ?: run {
+            PatchLog.debug("$NAME: source=$source 未找到通讯录 I0()")
+            return
+        }
+        runCatching {
+            module.hook(method).intercept { chain ->
+                val fragment = chain.thisObject ?: return@intercept chain.proceed()
+                val getContext = Reflect.findMethod(fragment.javaClass, "getContext", 0)
+                val ctx = Reflect.callMethod(fragment, getContext) as? Context
+                val displayId = runCatching { ctx?.display?.displayId }.getOrNull()
+                if (displayId == null || displayId == Display.DEFAULT_DISPLAY ||
+                    !PatchSettings.isEnabled(ctx, PatchSettings.KEY_WECHAT_STATUSBAR_FIX)
+                ) {
+                    return@intercept chain.proceed()
+                }
+
+                // ol.a(Context) 是微信 ActionBar 高度入口；I0 原逻辑在它上面继续叠加
+                // statusHeight / root.getTop / Main_top_marign，正是残留宽度来源。
+                val helper = runCatching {
+                    Class.forName("com.tencent.mm.ui.ol", false, classLoader)
+                }.getOrNull() ?: return@intercept chain.proceed()
+                val actionBar = Reflect.findMethodExact(helper, "a", Context::class.java)
+                    ?: return@intercept chain.proceed()
+                val height = runCatching {
+                    actionBar.isAccessible = true
+                    actionBar.invoke(null, ctx) as? Int
+                }.getOrNull() ?: return@intercept chain.proceed()
+
+                PatchLog.debug(
+                    "$NAME: displayId=$displayId 通讯录 I0() → 仅保留 ActionBar 高度 $height"
+                )
+                height
+            }
+            PatchLog.info("$NAME: source=$source 已挂钩通讯录 I0()，清除跨窗口 Main_top_marign")
+        }.onFailure {
+            PatchLog.warn("$NAME: source=$source 挂钩通讯录 I0() 失败", it)
         }
     }
 
