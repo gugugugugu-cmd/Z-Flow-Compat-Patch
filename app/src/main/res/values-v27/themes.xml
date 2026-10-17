@@ -6,6 +6,7 @@
         <item name="colorPrimaryDark">@color/brand_dark</item>
         <item name="colorAccent">@color/brand</item>
         <item name="colorControlActivated">@color/brand</item>
+        <item name="colorSwitchThumbNormal">@color/switch_off_thumb</item>
         <item name="android:colorBackground">@color/page_background</item>
         <item name="android:windowBackground">@color/page_background</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
