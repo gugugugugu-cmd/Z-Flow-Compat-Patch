@@ -21,6 +21,11 @@ extensions.configure<ApplicationExtension> {
         versionName = providers.gradleProperty("compatVersionName").orNull ?: "1.0.0"
     }
 
+    // AGP 9 默认关闭 BuildConfig，设置页要用到 APPLICATION_ID / VERSION_NAME，这里显式打开
+    buildFeatures {
+        buildConfig = true
+    }
+
     buildTypes {
         release {
             // 关掉混淆：模块很小，而入口类一旦被改名/裁剪，LSPosed 就加载不到

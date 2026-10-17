@@ -21,4 +21,5 @@
     <string name="pref_group_about">关于</string>
     <string name="pref_about_title">关于本模块</string>
     <string name="pref_about_summary">从 Z-Flow 中独立出来的兼容性修复补丁集，不包含小窗本体功能。</string>
+    <string name="settings_write_failed">写入失败：框架服务不可用。请确认模块已在 LSPosed 中启用，然后重新打开本页面。</string>
 </resources>
