@@ -1231,3 +1231,51 @@ TelegramPipDisable: enterPictureInPictureMode(...) → 拒绝进入
 | Telegram | 任务在主屏已进入系统 PiP，搬屏后状态被带入 | `setPictureInPictureParams` + `enterPictureInPictureMode` | 必须在进入 PiP 前阻止，等到虚拟屏再处理已来不及 |
 
 通用经验：选择最窄、但能覆盖全部真实调用路径的 hook 层级。不是越底层越好，也不是业务层永远更安全；要看错误语义是否在所有调用者中一致。
+
+
+---
+
+## 31. 首页来回切换小窗后偶发双行：`MainUI.H0()` 旧布局值未被覆盖
+
+最终压力测试发现：微信反复执行“虚拟屏 → 主屏展开 → 新虚拟屏”时，首页偶尔再次出现双行，但点击通讯录再切回首页立即恢复。
+
+日志已经证明此时 `ol.i()` 修复一直正常：
+
+```text
+displayId=N 首页调用 MainUI / ConversationListView → 状态栏高度置 0
+```
+
+因此问题不再是状态栏高度入口，而是消费高度的 `MainUI.H0(int,int)`。
+
+反编译可见，`H0()` 更新会话列表 `topMargin` 时有保护条件：旧 margin 已大于 0 且内部字段 `H` 尚未表示 multi-window 时，会跳过覆盖；status-bar mask View 高度也有同类条件。主屏阶段写入的非零值因此可能残留到新虚拟屏。切换一次其他 tab 会重新触发首页初始化，所以表面上“点通讯录再回来就好了”。
+
+最终增加页面级修复：
+
+```text
+com.tencent.mm.ui.conversation.MainUI#H0(int,int)
+```
+
+仅在 `displayId != 0` 时：
+
+1. 保存实例字段 `H`；
+2. 临时设置 `H=true`；
+3. 执行微信原始 `H0()`；
+4. 微信自身将列表 `topMargin` 和 mask height 设为 0；
+5. `finally` 恢复原字段值。
+
+这样不直接反射操作具体 View，也不依赖 View ID；仅借用微信已有的多窗口清零分支。主屏完全放行，每次虚拟屏中的 `H0()` 都会纠正旧布局值。
+
+正常日志：
+
+```text
+WeChatStatusBarFix: source=tinker 已挂钩首页 H0()，清除跨屏残留 margin/mask
+WeChatStatusBarFix: displayId=N 首页 H0() 临时设 H=true，清零残留 margin/mask
+```
+
+若新版本字段 `H` 或方法 `H0` 混淆名变化，应通过以下稳定日志字符串重新定位：
+
+```text
+setListMargin isInMultiWindowMode
+setListMargin origin
+setStatusBarMaskView height origin
+```

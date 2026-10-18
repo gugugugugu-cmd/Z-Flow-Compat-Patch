@@ -122,6 +122,7 @@ object WeChatStatusBarFix {
             logCandidateMethods(clazz, className)
             val method = resolveTarget(clazz, className) ?: continue
             if (hookMethod(module, method, className)) {
+                hookHomeLayoutReset(module, classLoader, source)
                 hookContactTopHeight(module, classLoader, source)
                 return true
             }
@@ -166,6 +167,58 @@ object WeChatStatusBarFix {
         }.onFailure {
             tinkerHookInstalled.set(false)
             PatchLog.warn("$NAME: 挂钩 TinkerLoader.tryLoad 失败", it)
+        }
+    }
+
+    /**
+     * 首页从主屏切回虚拟屏时，MainUI.H0() 可能因为旧 topMargin / mask 高度 > 0
+     * 且字段 H 尚未切到 multi-window 而拒绝覆盖，导致双行残留。临时将 H 设为 true，
+     * 让微信自身 H0() 把列表 topMargin 和 status-bar mask 高度清零，随后恢复字段。
+     */
+    private fun hookHomeLayoutReset(
+        module: XposedModule,
+        classLoader: ClassLoader,
+        source: String,
+    ) {
+        val className = "com.tencent.mm.ui.conversation.MainUI"
+        val clazz = runCatching { Class.forName(className, false, classLoader) }.getOrNull() ?: run {
+            PatchLog.debug("$NAME: source=$source 未找到首页类 $className")
+            return
+        }
+        val intPrimitive = Int::class.javaPrimitiveType ?: return
+        val method = Reflect.findMethodExact(clazz, "H0", intPrimitive, intPrimitive) ?: run {
+            PatchLog.debug("$NAME: source=$source 未找到首页 H0(int,int)")
+            return
+        }
+
+        runCatching {
+            module.hook(method).intercept { chain ->
+                val mainUi = chain.thisObject ?: return@intercept chain.proceed()
+                val getContext = Reflect.findMethod(mainUi.javaClass, "getContext", 0)
+                val ctx = Reflect.callMethod(mainUi, getContext) as? Context
+                val displayId = runCatching { ctx?.display?.displayId }.getOrNull()
+                if (displayId == null || displayId == Display.DEFAULT_DISPLAY ||
+                    !PatchSettings.isEnabled(ctx, PatchSettings.KEY_WECHAT_STATUSBAR_FIX)
+                ) {
+                    return@intercept chain.proceed()
+                }
+
+                val old = Reflect.getField(mainUi, "H") as? Boolean
+                if (old == null || !Reflect.setField(mainUi, "H", true)) {
+                    return@intercept chain.proceed()
+                }
+                try {
+                    PatchLog.debug(
+                        "$NAME: displayId=$displayId 首页 H0() 临时设 H=true，清零残留 margin/mask"
+                    )
+                    chain.proceed()
+                } finally {
+                    Reflect.setField(mainUi, "H", old)
+                }
+            }
+            PatchLog.info("$NAME: source=$source 已挂钩首页 H0()，清除跨屏残留 margin/mask")
+        }.onFailure {
+            PatchLog.warn("$NAME: source=$source 挂钩首页 H0() 失败", it)
         }
     }
 
