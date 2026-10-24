@@ -1,1 +1,176 @@
-IyDlvq7kv6HniYjmnKzpgILphY3mjIfljZcg4oCU4oCUIOS7pSA4LjAuNzYg5Li65L6L55qE5a6M5pW05oCd6LevCgo+IOacrOaWh+aYryLlvq7kv6HljYfnuqflkI7ooaXkuIHlpLHmlYjmgI7kuYjlip4i55qE5pON5L2c5omL5YaM44CCOC4wLjc2IOmAgumFje+8iDIwMjYtMTAtMjTvvInnmoTlrozmlbQKPiDliIbmnpDnu5Porrrop4EgW1JFQURNRSDnrKwgMjUtMjkg6IqCXSguLi9SRUFETUUubWQp77yb5pys5paH5Y+q6K6yKirmlrnms5XorroqKu+8muWmguS9leeUqOS4jeWPmOeahAo+IOmUmueCuemHjeaWsOWumuS9jeS8muWPmOeahOa3t+a3huWQje+8jOWmguS9lemqjOivgeivreS5ieayoea8guenu++8jOS7peWPiuS7o+eggemHjOWIsOW6leimgeaUueWTquWHoOihjOOAggo+Cj4g5YiG5p6Q5bel5YW377yaTVQg566h55CG5ZmoIE1DUO+8iGBtdCBtY3Bg77yJ44CC5rKh5pyJIE1DUCDml7bnlKjku7vmhI/lj43nvJbor5Hlt6XlhbfvvIhqYWR4IC8KPiBNVCDnrqHnkIblmajmiYvliqjvvInlrozmiJDlkIzmoLfnmoTmraXpqqTljbPlj6/vvIzmnKzmlofmr4/kuIDmraXpg73moIfms6jkuoblr7nlupTnmoTlt6XlhbfosIPnlKjjgIIKCi0tLQoKIyMgMC4g5qC45b+D5Y6f5YiZ77ya6ZSa54K55LiN5Y+Y6YePCgrlvq7kv6Hmr4/kuKrniYjmnKznmoTmt7fmt4blkI3vvIhgdWkuYmxg44CBYHUwYOOAgWB5MGDjgIFgTDBg44CBYGpg4oCm77yJ6YO95Y+v6IO95pW05L2T5rSX54mM77yMCioq5LiN6KaB6K6w5ZCN5a2X77yM6KaB6K6w6ZSa54K5KirjgILku6XkuIvkuJzopb/ot6jniYjmnKznqLPlrprvvIzmmK/miYDmnInlrprkvY3lt6XkvZznmoTlhaXlj6PvvJoKCnwg6ZSa54K557G75Z6LIHwg5bey55+l5a6e5L6LIHwg5Li65LuA5LmI56iz5a6aIHwKfCAtLS0gfCAtLS0gfCAtLS0gfAp8IOaXpeW/l+Wtl+espuS4siB8IGBbdHJ5U2V0TGlzdFZpZXdNYXJnaW5dYOOAgWBzZXRTdGF0dXNCYXJNYXNrVmlldyBoZWlnaHQgb3JpZ2luOiAlZCwgbmV3OiAlZCBpc0luTXVsdGlXaW5kb3dNb2RlOiVzYOOAgWBbdHJ5U2V0UGFyZW50Vmlld1BhZGRpbmddYOOAgWBzYXZlVG9wTWFyZ2luIHRvcE1hcmdpbjogJWQsIG5lZWRSZWFkOiAlYmDjgIFgZ2V0VG9wSGVpZ2h0IHN0YXR1c0hlaWdodDolc2DjgIFgV2VVSVRvb2xIZWxwZXJg44CBYFtmaXhTdGF0dXNCYXJIZWlnaHRdYCB8IOW+ruS/oeiHquW3seaOkumanOimgeeUqO+8jOS4jeS8muWIoCB8CnwgU2hhcmVkUHJlZmVyZW5jZXMg6ZSuIHwgYE1haW5fdG9wX21hcmlnbmDvvIjlvq7kv6Hljp/lp4vmi7zlhpnlsLHmmK8gbWFyaWdu77yJ44CBYE1haW5fbmVlZF9yZWFkX3RvcF9tYXJnaW5gIHwg6L+B56e75oiQ5pys6auY77yM5ou85YaZ6ZSZ6K+v5Lmf6KaB5YW85a65IHwKfCDlj43lsITotYTmupDlkI0gfCBgc3RhdHVzX2Jhcl9oZWlnaHRg44CBYGNvbS5hbmRyb2lkLmludGVybmFsLlIkZGltZW5gIHwg5Y+N5bCE55uu5qCH77yM5pS55LqG5bCx5Y+W5LiN5Yiw5YC8IHwKfCDmoYbmnrbmlrnms5XlkI0gfCBgb25Db25maWd1cmF0aW9uQ2hhbmdlZGDjgIFgZ2V0Q29udGV4dGDjgIFgaXNJbk11bHRpV2luZG93TW9kZWDjgIFgZ2V0TGF5b3V0UGFyYW1zYCB8IOezu+e7nyBBUEnvvIzmsLjkuI3mt7fmt4YgfAp8IOaWueazleetvuWQjSB8IGAoTGFuZHJvaWQvY29udGVudC9Db250ZXh0O0kpSWDjgIFgKElJKVZgIHwg5re35reG5LiN5pS5562+5ZCNIHwKfCDlpKfnsbvnsbvlkI0gfCBgTWFpblVJYOOAgWBDb252ZXJzYXRpb25MaXN0Vmlld2DjgIFgQmFzZUFkZHJlc3NVSUZyYWdtZW50YOOAgWBGaW5kTW9yZUZyaWVuZHNVSWDjgIFgTmV3Q2hhdHRpbmdUYWJVSWDjgIFgTGF1bmNoZXJVSWAgfCDkvY7kuo4gNjU1MzYg5Liq57G75LiN6Kem5Y+R6YeN5re35reG77yM56iz5a6a6ZuG5ZCIIHwKfCDml6Xlv5cgdGFnIHwgYE1pY3JvTXNnLk1haW5VSWDjgIFgTWljcm9NTS5Db252ZXJzYXRpb25MaXN0Vmlld2AgfCDlkIzml6Xlv5flrZfnrKbkuLIgfAoK5Y+N5L6L77yaYHVpLm9sYCAvIGB1aS5ibGDvvIjlt6XlhbfnsbvvvInjgIFgSDBgIC8gYHUwYO+8iOW4g+WxgOaWueazle+8ieOAgWBJMGAgLyBgdTAoKWDvvIjpgJrorq/lvZXpq5jluqbvvInjgIEKYHc3YCAvIGBsN2DvvIjph43or5UgUnVubmFibGXvvInigJTigJTov5nkupsqKuavj+S4queJiOacrOmDveW/hemhu+mHjeaWsOWumuS9jSoq44CCCgotLS0KCiMjIDEuIOeJiOacrOW3ruW8gumAn+afpeihqO+8iOaMgee7ree7tOaKpO+8iQoK6YCC6YWN5paw54mI5pys5YmN5YWI5pu05paw6L+Z5byg6KGo77yM5Luj56CB5pS55Yqo5Z+65pys5bCx5piv5oqK5paw5ZCN5a2X5aGr6L+b5YCZ6YCJ5YiX6KGo44CCCgp8IOeUqOmAlCB8IDguMC41eCB8IDguMC43NiB8IDguMC43OSB8CnwgLS0tIHwgLS0tIHwgLS0tIHwgLS0tIHwKfCBXZVVJVG9vbEhlbHBlciDlt6XlhbfnsbsgfCBgdWkuZ2xgIC8gYHVpLmdrYCAvIGB1aS5nbWAgfCAqKmB1aS5ibGAqKiB8IGB1aS5vbGAgfAp8IOeKtuaAgeagj+mrmOW6puS4u+WFpeWPoyB8IOWQjOetvuWQjSB8IGBibC5pKENvbnRleHQsIGludClgIHwgYG9sLmkoQ29udGV4dCwgaW50KWAgfAp8IEFjdGlvbkJhciDpq5jluqYgfCDlkIznrb7lkI0gfCBgYmwuYShDb250ZXh0KWAgfCBgb2wuYShDb250ZXh0KWAgfAp8IOmmlumhteivu+mrmOW6piDihpIg5YaZ5biD5bGAIHwg4oCUIHwgYE1haW5VSS55MCgpYCDihpIgYHUwKElJKWAgfCBgTWFpblVJLkswKClgIOKGkiBgSDAoSUkpYCB8Cnwg5aSa56qX5Y+j5qCH5b+X5a2X5q61IHwg4oCUIHwgYE1haW5VSS5IYCB8IGBNYWluVUkuSGAgfAp8IOmmlumhteW8guatpemHjeivlSB8IOKAlCB8IGBjb252ZXJzYXRpb24ubDdgIHwgYGNvbnZlcnNhdGlvbi53N2AgfAp8IOmAmuiur+W9lemhtumDqOaAu+mrmOW6piB8IOKAlCB8IGBCYXNlQWRkcmVzc1VJRnJhZ21lbnQudTAoKUlgIHwgYOKApkkwKClJYCB8Cnwg5Y+R546w6aG16aG26YOo5oC76auY5bqmIHwg4oCUIHwgYEZpbmRNb3JlRnJpZW5kc1VJLkwwKClJYO+8iCoqOC4wLjc2IOi1t+aciee8k+WtmOWIhuaUryoq77yJIHwg5peg57yT5a2Y5YiG5pSvIHwKfCDogYrlpKnlrrnlmajpobbpg6jpq5jluqYgfCDigJQgfCBgTmV3Q2hhdHRpbmdUYWJVSS5qKClJYO+8iOivu+e8k+WtmO+8iSB8IOacquefpS/ml6AgfAp8IOe8k+WtmOWGmeWFpeiAhSB8IOKAlCB8IGBDb252ZXJzYXRpb25MaXN0Vmlldy52KElaKWAgfCDlkIzlkI0gfAp8IOe8k+WtmOivu+WPluiAhembhuWQiCB8IOKAlCB8IOmAmuiur+W9lSArIOWPkeeOsCArIOiBiuWkqeWuueWZqCB8IOS7hemAmuiur+W9lSB8CgotLS0KCiMjIDIuIOS6lOatpeWumuS9jeazlQoKIyMjIOesrOS4gOatpe+8muW8gOW3peS9nOWMugoKYGBgCm10X2Fwa193b3Jrc3BhY2Vfb3BlbihwYXRoPSLlvq7kv6FfPOeJiOacrD4uYXBrIiwgdGVtcG9yYXJ5PWZhbHNlKQpgYGAKCuazqOaEj++8muaWh+S7tuWQjeWQq+S4reaWh+aXtu+8jEpTT04g6YeM55SoIGBcdTVmYWVcdTRmZTFgIOi9rOS5ie+8iFdpbmRvd3MgY3VybCDnm7TkvKAgVVRGLTgK5Lya57yW56CB6ZSZ5Lmx5a+86Ie0IGBQQVRIX05PVF9GT1VORGDvvInjgILkv53lrZjov5Tlm57nmoQgYHdvcmtzcGFjZUlkYO+8jOWQjumdouaJgOacieiwg+eUqOmDveeUqOWug+OAggoKIyMjIOesrOS6jOatpe+8muWumuS9jeeKtuaAgeagj+W3peWFt+exu++8iFdlVUlUb29sSGVscGVy77yJCgoqKuWFpeWPo+mUmueCue+8muWPjeWwhOWtl+espuS4siBgc3RhdHVzX2Jhcl9oZWlnaHRg44CCKioKCmBgYAptdF9hcGtfc2VhcmNoKHRhcmdldD0ic21hbGkiLCBxdWVyeT0ic3RhdHVzX2Jhcl9oZWlnaHQiLCBwcmVmaXg9ImNvbS50ZW5jZW50Lm1tLnVpIikKYGBgCgrlkb3kuK3oi6XlubLnsbvvvIzmib7pgqPkuKoqKuexu+S9k+W+iOWwj+OAgeWFqOmdmeaAgeaWueazleOAgeS4lOWQjOaXtuWHuueOsCBgV2VVSVRvb2xIZWxwZXJgIOaXpeW/lyB0YWcqKgrnmoTmir3osaHnsbvvvIg4LjAuNzk9YHVpLm9sYO+8jDguMC43Nj1gdWkuYmxg77yJ44CC54S25ZCO6K+757G76L2u5buT5qC45a+55pa55rOV5peP77yaCgpgYGAKbXRfYXBrX2RleF9yZWFkX2NsYXNzX291dGxpbmUobG9jYXRvcj0iZGV4X2NsYXNzOkxjb20vdGVuY2VudC9tbS91aS9ibDsiKQpgYGAKCumcgOimgeehruiupOWtmOWcqO+8iOWQjeWtl+WPr+iDveWPmO+8jOetvuWQjeS4jeS8muWPmO+8ie+8mgoKfCDmlrnms5Xnrb7lkI0gfCDor63kuYnvvIjnnIsgaW50ZXJlc3RpbmdTdHJpbmdz77yJIHwKfCAtLS0gfCAtLS0gfAp8IGAoQ29udGV4dCwgaW50KSDihpIgaW50YCB8IOS4u+WFpeWPo++8jOWtl+espuS4suWQqyBgW2ZpeFN0YXR1c0JhckhlaWdodF1g44CBYFtnZXRTdGF0dXNCYXJIZWlnaHRdYCB8CnwgYChDb250ZXh0KSDihpIgaW50YCB8IOiWhOWMheijhe+8jGludm9rZSDorqHmlbAg4omkIDMgfAp8IGAoQ29udGV4dCwgaW50KSDihpIgaW50YO+8iOWPpuS4gOS4qu+8iSB8IOWPjeWwhCBgY29tLmFuZHJvaWQuaW50ZXJuYWwuUiRkaW1lbmDvvIzlrZfnrKbkuLLlkKsgYHN0YXR1c19iYXJfaGVpZ2h0YCB8CnwgYChDb250ZXh0KSDihpIgaW50YO+8iOWPpuS4gOS4qu+8iSB8IEFjdGlvbkJhciDpq5jluqbvvIzlrZfnrKbkuLLlkKsgYGdldEFjdGlvbkJhckhlaWdodGAgfAoKIyMjIOesrOS4ieatpe+8muWumuS9jemmlumhtemTvui3rwoKKirlhaXlj6PplJrngrnvvJrml6Xlv5fkuLIgYHRyeVNldExpc3RWaWV3TWFyZ2luYOOAgioqCgpgYGAKbXRfYXBrX3NlYXJjaCh0YXJnZXQ9ImRleF9zdHJpbmdzIiwgcXVlcnk9InRyeVNldExpc3RWaWV3TWFyZ2luIikKYGBgCgrlkb3kuK3kuKTkuKrnsbvvvJpgTWFpblVJYO+8iOWQjOatpei3r+W+hO+8ieWSjOmHjeivlSBSdW5uYWJsZe+8iDguMC43Nj1gY29udmVyc2F0aW9uLmw3YO+8ieOAgueEtuWQju+8mgoKMS4g6K+7IGBNYWluVUlgIOi9ruW7k++8jCoq5oyJ5pel5b+X5Liy5om+5pa55rOVKirvvJpgW3RyeVNldExpc3RWaWV3TWFyZ2luXSBzdGF0dXNIZWlnaHRgIOaJgOWcqAogICDmlrnms5UgPSDor7vpq5jluqblhaXlj6PvvIhgeTBgL2BLMGDvvInvvJtgc2V0TGlzdE1hcmdpbmAgKyBgc2V0U3RhdHVzQmFyTWFza1ZpZXdgIOaJgOWcqAogICDmlrnms5UgPSDluIPlsYDlhpnlhaXogIXvvIhgdTBgL2BIMGDvvInvvJsKMi4gKirkuI3opoHkvp3otZbmlrnms5XlkI0qKu+8muS7o+eggemHjOWvueW4g+WxgOWGmeWFpeiAheaMiSBgKElJKVZgIOetvuWQjeWUr+S4gOWumuS9jeOAgueUqOi9ruW7k+ehruiupAogICBgTWFpblVJYCDlt7Llo7DmmI7mlrnms5Xph4wgYChJSSlWYCDlj6rmnInkuIDkuKrvvIg4LjAuNzYg5a6e5rWL5LuFIGB1MGDvvInvvJsKMy4g6K+75Lik5Liq5pa55rOV55qEIHNtYWxpIOi/mOWOn+mAu+i+ke+8iGBtdF9hcGtfcmVhZF90ZXh0YO+8jGxvY2F0b3Ig55SoCiAgIGBkZXhfbWV0aG9kOkzigKY7LT51MChJSSlWYO+8ieOAgumHjeeCueaguOWvueS4ieS7tuS6i++8mgogICAtIOWuiOWNq+adoeS7tu+8mmDlvZPliY3lgLwgPiAwICYmIEggPT0gZmFsc2Ug4oaSIOi3s+i/h2DvvIxgSCA9PSB0cnVlIOKGkiDlvLrliLbmuIXpm7Zg77ybCiAgIC0g6LCD55So6Zeo77ya6K+76auY5bqm5YWl5Y+j5piv5ZCmIGBzdGF0dXMgPD0gMCDml7bkuI3osIPnlKjluIPlsYDmlrnms5Vg77yIOC4wLjc2IOaYr++8mwogICDov5nmraPmmK/lj4zooYzmrovnlZnnmoTmoLnmupDvvIzop4EgUkVBRE1FIMKnMjbvvInvvJsKICAgLSBgSGAg5a2X5q6157G75Z6L77yIYFpg77yJ5LiO5YaZ5YWl54K577yIYG9uQ29uZmlndXJhdGlvbkNoYW5nZWRgIC8gdGFiIOWIm+W7uu+8ie+8mwo0LiDkuqTlj4npqozor4HosIPnlKjpl63ljIXvvIjpmLLmraLmvI/mjonliKvnmoTlhpnlhaXogIXvvInvvJoKCmBgYAptdF9hcGtfZGV4X3hyZWYobG9jYXRvcj0iZGV4X21ldGhvZDpM4oCmTWFpblVJOy0+dTAoSUkpViIsIG1ldGhvZFJlc29sdXRpb249ImRpc3BhdGNoIikKbXRfYXBrX2RleF94cmVmKGxvY2F0b3I9ImRleF9maWVsZDpM4oCmTWFpblVJOy0+SDpaIiwgbWV0aG9kUmVzb2x1dGlvbj0ibm90X2FwcGxpY2FibGUiKQpgYGAKCiMjIyDnrKzlm5vmraXvvJrlrprkvY0gYE1haW5fdG9wX21hcmlnbmAg57yT5a2Y55Sf5oCBCgoqKuWFpeWPo+mUmueCue+8muWBj+WlvemUriBgTWFpbl90b3BfbWFyaWduYOOAgioqCgpgYGAKbXRfYXBrX3NlYXJjaCh0YXJnZXQ9ImRleF9zdHJpbmdzIiwgcXVlcnk9Ik1haW5fdG9wX21hcmlnbiIpCmBgYAoK5a+55q+P5Liq5ZG95Lit57G76K+76L2u5buT77yM5om+5ZCM5pe25ruh6LazIui/lOWbniBgaW50YOOAgeaXoOWPguOAgWludGVyZXN0aW5nSW52b2tlcyDlkKsK5bel5YW357G7IGAtPmFgIOS4jiBgLT5pYOOAgeWtl+espuS4suWQqyBgZ2V0VG9wSGVpZ2h0YCLnmoTmlrnms5UgPSDor7vlj5bogIXvvJvlrZfnrKbkuLLlkKsKYHNhdmVUb3BNYXJnaW5gIOeahCA9IOWGmeWFpeiAheOAgioq5q+P5Liq54mI5pys6YeN5paw5pWw5LiA6YGN6K+75Y+W6ICF6ZuG5ZCIKirigJTigJQ4LjAuNzkg5Y+q5pyJCumAmuiur+W9le+8jDguMC43NiDlj5jmiJDpgJrorq/lvZUgKyDlj5HnjrAgKyDogYrlpKnlrrnlmajkuInkuKrvvIzov5nnsbsi57yT5a2Y6K+76ICF5omp5a65IuaYr+eJiOacrOmXtArmnIDluLjop4HnmoTmvILnp7vjgIIKCiMjIyDnrKzkupTmraXvvJrloavooajmlLnku6PnoIEKCuS7o+eggemHjOWPquacieWbm+WkhOi3n+eJiOacrOebuOWFs++8jOWFtuS9memAu+i+ke+8iOiZmuaLn+Wxj+WIpOWumuOAgeW8gOWFs+OAgVRpbmtlcuOAgeaXpeW/l++8ieS4jeWKqO+8mgoKYGBgdGV4dAphcHAvc3JjL21haW4vamF2YS9pby9yZWxpbXVzL3pmbG93L2NvbXBhdC94cG9zZWQvcGF0Y2gvV2VDaGF0U3RhdHVzQmFyRml4Lmt0CuKUnOKUgOKUgCBDQU5ESURBVEVfQ0xBU1NFUyAgIOKGkCDmiormlrDlt6XlhbfnsbvlkI3mj5LliLDliJfooajnrKzkuIDkvY3vvIzml6fnmoTkv53nlZnlhZzlupUK4pSc4pSA4pSAIFRBUkdFVF9NRVRIT0QgLyBGQUxMQkFDS19NRVRIT0QgIOKGkCDnrb7lkI3lj5jkuobmiY3liqjvvIjoh7Pku4rmsqHlj5jov4fvvJppIC8gaO+8iQrilJzilIDilIAgVE9QX0hFSUdIVF9UQVJHRVRTICDihpAg5oyJ56ys5Zub5q2l57uT5p6c5aKe5Yig77yI57G75ZCN56iz5a6a77yM5pS55pa55rOV5ZCN5YCZ6YCJ77yJCuKUlOKUgOKUgCDvvIjkuI3pnIDopoHmlLnvvInluIPlsYDlhpnlhaXogIXmjIkgKElJKVYg562+5ZCN5a6a5L2N44CB6Kem5Y+R5Zmo5piv5qGG5p625pa55rOVCiAgICBvbkNvbmZpZ3VyYXRpb25DaGFuZ2Vk44CB5a2X5q61IEgg4oCU4oCUIOmDveaYr+eos+WumumUmueCuQpgYGAKCi0tLQoKIyMgMy4g6aqM6K+B5riF5Y2VCgoxLiAqKuWuieijheWxgioq77yaTFNQb3NlZCDml6Xlv5flh7rnjrAKICAgYOWRveS4reWAmemAieexuyBjb20udGVuY2VudC5tbS51aS485paw5ZCNPmAgKwogICBg5bey5oyC6ZKpIDzmlrDlkI0+I2kg4oCU4oCUIOiZmuaLn+Wxj+S7hemmlumhteS8muivneWIl+ihqOmrmOW6puW9kumbtmAgKwogICDmr4/kuKrnvJPlrZjor7vlj5bogIXkuIDmnaEgYOW3suaMgumSqeKApmDjgILku7vkvZXkuIDmnaHnvLrlpLEg4oaSIOWvueW6lOWumuS9jeWksei0pe+8jOW8gOivpue7huaXpeW/l+eci+aOoua1i+i/h+eoi++8mwoyLiAqKuWKn+iDveWxgioq77yIUkVBRE1FIMKnMjnvvInvvJoKICAgLSDlsI/nqpflhrflkK/liqjvvJrpppbpobXljZXooYzmoIfpopjvvIzpgJrorq/lvZUv5Y+R546w6aaW6aG55LiN6KKr5qCH6aKY5qCP6KaG55uW77ybCiAgIC0g5bCP56qXIOKGlCDlhajlsY/mnaXlm54g4omlIDUg5qyh77ya5q+P5qyh5YiH5Zue5bCP56qX6aaW6aG15Y+q5pyJ5LiA6KGM77yb6K+m57uG5pel5b+X5bqU5Ye6546wCiAgICAgYOmmlumhtea4hembtiBtYXJnaW4vbWFza++8iOS4tOaXtiBIPXRydWUg6LWw5b6u5L+h5by65Yi25riF6Zu25YiG5pSv77yJYO+8mwogICAtIOmAmuiur+W9lS/lj5HnjrDlsZXlvIDlkI7nvKnlm57kuI3ph43mlrDlj5jlrr3vvJsKICAgLSDlm57lhajlsY/lkI7pobbpg6jmgaLlpI3mraPluLjnirbmgIHmoI/pq5jluqbvvIjmuIXpm7bkuI3og73msaHmn5PkuLvlsY/vvInvvJsKMy4gKirlm57lvZLlsYIqKu+8muiuvue9rumHjOWFs+mXreW+ruS/oeihpeS4geW8gOWFsyDihpIg5by65YGc5b6u5L+hIOKGkiDlsI/nqpfooYzkuLrlupTkuI7kuI3oo4XmqKHlnZfkuIDoh7TjgIIKCiMjIDQuIOaOkumanOmAn+afpQoKfCDnl4fnirYgfCDnu5PorrogfCDliqjkvZwgfAp8IC0tLSB8IC0tLSB8IC0tLSB8Cnwg5pel5b+XIGDmnKrmib7liLDlj6/nlKjnm67moIfmlrnms5VgIHwg5bel5YW357G75oiW5Lik5Liq5pa55rOV562+5ZCN6YO95Y+Y5LqGIHwg6YeN5YGa56ys5LqM5q2lIHwKfCBg5bey5oyC6ZKpYOacieS9huW4g+WxgOaXoOWPmOWMliB8IOaMguWIsOS6humdnuS4u+WFpeWPo++8iOmHjei9veWRveS4remUmeaWueazle+8iSB8IOeci+ivpue7huaXpeW/l+eahOWAmemAieaWueazleetvuWQjSB8Cnwg6aaW6aG15aW95LqG5L2G6YCa6K6v5b2V5Y+Y5a69IHwg6K+75Y+W6ICF6ZuG5ZCI5Y+Y5LqG77yI5omp5a65L+aUueWQje+8iSB8IOmHjeWBmuesrOWbm+atpSB8Cnwg5YiH5Zue5bCP56qX5LuN5YG25Y+R5Y+M6KGMIHwgYG9uQ29uZmlndXJhdGlvbkNoYW5nZWRgIOacquinpuWPkeaIliBgSGAg5a2X5q615pS55ZCNIHwg5p+lIGDml6Dms5XllK/kuIDlrprkvY0gKElJKVZgIC8gYOWtl+autSBIIOS4jeWPr+eUqGAg5pel5b+XIHwKfCBgKElJKVYg5peg5rOV5ZSv5LiA5a6a5L2NYCB8IE1haW5VSSDmlrDlop7kuoblkIznrb7lkI3mlrnms5UgfCDor7vova7lu5Pmib7lh7rmraPnoa7pgqPkuKrvvIzku6PnoIHmlLnkuLrmjInml6Xlv5fkuLLnmb3lkI3ljZXlrprkvY0gfAoKIyMgNS4g5bey6aqM6K+B6L+H5L2G5LiN5bqU6YeN5aSN6YeH55So55qE5pa55qGICgrljoblj7LmlZnorq3vvIjnu4boioLop4EgUkVBRE1FIMKnMTTjgIHCpzI277yJ77yaCgotIOS7hSBob29rIGBoKENvbnRleHQpYCDoloTljIXoo4Ug4oCU4oCUIDguMC43OSDlrp7or4HkuLvnlYzpnaLkuI3otbDlroPvvJsKLSDlr7nmiYDmnInpnZ7kuLvlsY8gYGkoKWAg57uf5LiA6L+U5ZueIDAg4oCU4oCUIOmAmuiur+W9lS/lj5HnjrDpppbpobnooqvmoIfpopjmoI/opobnm5bvvJsKLSDlj6rmjILluIPlsYDlhpnlhaXogIXvvIhIMC91MO+8ieetieWug+iiq+iwg+eUqOadpea4heaui+eVmSDigJTigJQg5bCP56qX6YeM5a6DKirmsLjov5zkuI3kvJrooqvosIPnlKgqKgogIO+8iGBzdGF0dXMgPD0gMGAg5pe26LCD55So5pa55o+Q5YmNIHJldHVybu+8ie+8jOW/hemhu+eUsSBgb25Db25maWd1cmF0aW9uQ2hhbmdlZGAg5Li75Yqo6Kem5Y+R77ybCi0g5riF56m6IGBNYWluX3RvcF9tYXJpZ25gIOe8k+WtmCDigJTigJQg5Yqo5LqG5b6u5L+h5YWo5bGA54q25oCB77yM5Li75bGP6KGM5Li65Y+v6IO96KKr56C05Z2P44CCCg==
+# 微信版本适配指南 —— 以 8.0.76 为例的完整思路
+
+> 本文是"微信升级后补丁失效怎么办"的操作手册。8.0.76 适配（2026-10-24）的完整
+> 分析结论见 [README 第 25-29 节](../README.md)；本文只讲**方法论**：如何用不变的
+> 锚点重新定位会变的混淆名，如何验证语义没漂移，以及代码里到底要改哪几行。
+>
+> 分析工具：MT 管理器 MCP（`mt mcp`）。没有 MCP 时用任意反编译工具（jadx /
+> MT 管理器手动）完成同样的步骤即可，本文每一步都标注了对应的工具调用。
+
+---
+
+## 0. 核心原则：锚点不变量
+
+微信每个版本的混淆名（`ui.bl`、`u0`、`y0`、`L0`、`j`…）都可能整体洗牌，
+**不要记名字，要记锚点**。以下东西跨版本稳定，是所有定位工作的入口：
+
+| 锚点类型 | 已知实例 | 为什么稳定 |
+| --- | --- | --- |
+| 日志字符串 | `[trySetListViewMargin]`、`setStatusBarMaskView height origin: %d, new: %d isInMultiWindowMode:%s`、`[trySetParentViewPadding]`、`saveTopMargin topMargin: %d, needRead: %b`、`getTopHeight statusHeight:%s`、`WeUIToolHelper`、`[fixStatusBarHeight]` | 微信自己排障要用，不会删 |
+| SharedPreferences 键 | `Main_top_marign`（微信原始拼写就是 marign）、`Main_need_read_top_margin` | 迁移成本高，拼写错误也要兼容 |
+| 反射资源名 | `status_bar_height`、`com.android.internal.R$dimen` | 反射目标，改了就取不到值 |
+| 框架方法名 | `onConfigurationChanged`、`getContext`、`isInMultiWindowMode`、`getLayoutParams` | 系统 API，永不混淆 |
+| 方法签名 | `(Landroid/content/Context;I)I`、`(II)V` | 混淆不改签名 |
+| 大类类名 | `MainUI`、`ConversationListView`、`BaseAddressUIFragment`、`FindMoreFriendsUI`、`NewChattingTabUI`、`LauncherUI` | 低于 65536 个类不触发重混淆，稳定集合 |
+| 日志 tag | `MicroMsg.MainUI`、`MicroMM.ConversationListView` | 同日志字符串 |
+
+反例：`ui.ol` / `ui.bl`（工具类）、`H0` / `u0`（布局方法）、`I0` / `u0()`（通讯录高度）、
+`w7` / `l7`（重试 Runnable）——这些**每个版本都必须重新定位**。
+
+---
+
+## 1. 版本差异速查表（持续维护）
+
+适配新版本前先更新这张表，代码改动基本就是把新名字填进候选列表。
+
+| 用途 | 8.0.5x | 8.0.76 | 8.0.79 |
+| --- | --- | --- | --- |
+| WeUIToolHelper 工具类 | `ui.gl` / `ui.gk` / `ui.gm` | **`ui.bl`** | `ui.ol` |
+| 状态栏高度主入口 | 同签名 | `bl.i(Context, int)` | `ol.i(Context, int)` |
+| ActionBar 高度 | 同签名 | `bl.a(Context)` | `ol.a(Context)` |
+| 首页读高度 → 写布局 | — | `MainUI.y0()` → `u0(II)` | `MainUI.K0()` → `H0(II)` |
+| 多窗口标志字段 | — | `MainUI.H` | `MainUI.H` |
+| 首页异步重试 | — | `conversation.l7` | `conversation.w7` |
+| 通讯录顶部总高度 | — | `BaseAddressUIFragment.u0()I` | `…I0()I` |
+| 发现页顶部总高度 | — | `FindMoreFriendsUI.L0()I`（**8.0.76 起有缓存分支**） | 无缓存分支 |
+| 聊天容器顶部高度 | — | `NewChattingTabUI.j()I`（读缓存） | 未知/无 |
+| 缓存写入者 | — | `ConversationListView.v(IZ)` | 同名 |
+| 缓存读取者集合 | — | 通讯录 + 发现 + 聊天容器 | 仅通讯录 |
+
+---
+
+## 2. 五步定位法
+
+### 第一步：开工作区
+
+```
+mt_apk_workspace_open(path="微信_<版本>.apk", temporary=false)
+```
+
+注意：文件名含中文时，JSON 里用 `\u5fae\u4fe1` 转义（Windows curl 直传 UTF-8
+会编码错乱导致 `PATH_NOT_FOUND`）。保存返回的 `workspaceId`，后面所有调用都用它。
+
+### 第二步：定位状态栏工具类（WeUIToolHelper）
+
+**入口锚点：反射字符串 `status_bar_height`。**
+
+```
+mt_apk_search(target="smali", query="status_bar_height", prefix="com.tencent.mm.ui")
+```
+
+命中若干类，找那个**类体很小、全静态方法、且同时出现 `WeUIToolHelper` 日志 tag**
+的抽象类（8.0.79=`ui.ol`，8.0.76=`ui.bl`）。然后读类轮廓核对方法族：
+
+```
+mt_apk_dex_read_class_outline(locator="dex_class:Lcom/tencent/mm/ui/bl;")
+```
+
+需要确认存在（名字可能变，签名不会变）：
+
+| 方法签名 | 语义（看 interestingStrings） |
+| --- | --- |
+| `(Context, int) → int` | 主入口，字符串含 `[fixStatusBarHeight]`、`[getStatusBarHeight]` |
+| `(Context) → int` | 薄包装，invoke 计数 ≤ 3 |
+| `(Context, int) → int`（另一个） | 反射 `com.android.internal.R$dimen`，字符串含 `status_bar_height` |
+| `(Context) → int`（另一个） | ActionBar 高度，字符串含 `getActionBarHeight` |
+
+### 第三步：定位首页链路
+
+**入口锚点：日志串 `trySetListViewMargin`。**
+
+```
+mt_apk_search(target="dex_strings", query="trySetListViewMargin")
+```
+
+命中两个类：`MainUI`（同步路径）和重试 Runnable（8.0.76=`conversation.l7`）。然后：
+
+1. 读 `MainUI` 轮廓，**按日志串找方法**：`[trySetListViewMargin] statusHeight` 所在
+   方法 = 读高度入口（`y0`/`K0`）；`setListMargin` + `setStatusBarMaskView` 所在
+   方法 = 布局写入者（`u0`/`H0`）；
+2. **不要依赖方法名**：代码里对布局写入者按 `(II)V` 签名唯一定位。用轮廓确认
+   `MainUI` 已声明方法里 `(II)V` 只有一个（8.0.76 实测仅 `u0`）；
+3. 读两个方法的 smali 还原逻辑（`mt_apk_read_text`，locator 用
+   `dex_method:L…;->u0(II)V`）。重点核对三件事：
+   - 守卫条件：`当前值 > 0 && H == false → 跳过`，`H == true → 强制清零`；
+   - 调用门：读高度入口是否 `status <= 0 时不调用布局方法`（8.0.76 是；
+   这正是双行残留的根源，见 README §26）；
+   - `H` 字段类型（`Z`）与写入点（`onConfigurationChanged` / tab 创建）；
+4. 交叉验证调用闭包（防止漏掉别的写入者）：
+
+```
+mt_apk_dex_xref(locator="dex_method:L…MainUI;->u0(II)V", methodResolution="dispatch")
+mt_apk_dex_xref(locator="dex_field:L…MainUI;->H:Z", methodResolution="not_applicable")
+```
+
+### 第四步：定位 `Main_top_marign` 缓存生态
+
+**入口锚点：偏好键 `Main_top_marign`。**
+
+```
+mt_apk_search(target="dex_strings", query="Main_top_marign")
+```
+
+对每个命中类读轮廓，找同时满足"返回 `int`、无参、interestingInvokes 含
+工具类 `->a` 与 `->i`、字符串含 `getTopHeight`"的方法 = 读取者；字符串含
+`saveTopMargin` 的 = 写入者。**每个版本重新数一遍读取者集合**——8.0.79 只有
+通讯录，8.0.76 变成通讯录 + 发现 + 聊天容器三个，这类"缓存读者扩容"是版本间
+最常见的漂移。
+
+### 第五步：填表改代码
+
+代码里只有四处跟版本相关，其余逻辑（虚拟屏判定、开关、Tinker、日志）不动：
+
+```text
+app/src/main/java/io/relimus/zflow/compat/xposed/patch/WeChatStatusBarFix.kt
+├── CANDIDATE_CLASSES   ← 把新工具类名插到列表第一位，旧的保留兜底
+├── TARGET_METHOD / FALLBACK_METHOD  ← 签名变了才动（至今没变过：i / h）
+├── TOP_HEIGHT_TARGETS  ← 按第四步结果增删（类名稳定，改方法名候选）
+└── （不需要改）布局写入者按 (II)V 签名定位、触发器是框架方法
+    onConfigurationChanged、字段 H —— 都是稳定锚点
+```
+
+---
+
+## 3. 验证清单
+
+1. **安装层**：LSPosed 日志出现
+   `命中候选类 com.tencent.mm.ui.<新名>` +
+   `已挂钩 <新名>#i —— 虚拟屏仅首页会话列表高度归零` +
+   每个缓存读取者一条 `已挂钩…`。任何一条缺失 → 对应定位失败，开详细日志看探测过程；
+2. **功能层**（README §29）：
+   - 小窗冷启动：首页单行标题，通讯录/发现首项不被标题栏覆盖；
+   - 小窗 ↔ 全屏来回 ≥ 5 次：每次切回小窗首页只有一行；详细日志应出现
+     `首页清零 margin/mask（临时 H=true 走微信强制清零分支）`；
+   - 通讯录/发现展开后缩回不重新变宽；
+   - 回全屏后顶部恢复正常状态栏高度（清零不能污染主屏）；
+3. **回归层**：设置里关闭微信补丁开关 → 强停微信 → 小窗行为应与不装模块一致。
+
+## 4. 排障速查
+
+| 症状 | 结论 | 动作 |
+| --- | --- | --- |
+| 日志 `未找到可用目标方法` | 工具类或两个方法签名都变了 | 重做第二步 |
+| `已挂钩`有但布局无变化 | 挂到了非主入口（重载命中错方法） | 看详细日志的候选方法签名 |
+| 首页好了但通讯录变宽 | 读取者集合变了（扩容/改名） | 重做第四步 |
+| 切回小窗仍偶发双行 | `onConfigurationChanged` 未触发或 `H` 字段改名 | 查 `无法唯一定位 (II)V` / `字段 H 不可用` 日志 |
+| `(II)V 无法唯一定位` | MainUI 新增了同签名方法 | 读轮廓找出正确那个，代码改为按日志串白名单定位 |
+
+## 5. 已验证过但不应重复采用的方案
+
+历史教训（细节见 README §14、§26）：
+
+- 仅 hook `h(Context)` 薄包装 —— 8.0.79 实证主界面不走它；
+- 对所有非主屏 `i()` 统一返回 0 —— 通讯录/发现首项被标题栏覆盖；
+- 只挂布局写入者（H0/u0）等它被调用来清残留 —— 小窗里它**永远不会被调用**
+  （`status <= 0` 时调用方提前 return），必须由 `onConfigurationChanged` 主动触发；
+- 清空 `Main_top_marign` 缓存 —— 动了微信全局状态，主屏行为可能被破坏。

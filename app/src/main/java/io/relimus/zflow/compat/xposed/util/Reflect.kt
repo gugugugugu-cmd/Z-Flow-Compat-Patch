@@ -1,1 +1,142 @@
-cGFja2FnZSBpby5yZWxpbXVzLnpmbG93LmNvbXBhdC54cG9zZWQudXRpbAoKaW1wb3J0IGphdmEubGFuZy5yZWZsZWN0LkV4ZWN1dGFibGUKaW1wb3J0IGphdmEubGFuZy5yZWZsZWN0Lk1ldGhvZAoKLyoqCiAqIOaegeeugOWPjeWwhOW3peWFt+OAggogKgogKiDnjrDku6MgWHBvc2VkIEFQSe+8iDEwMu+8ieS4jeWGjeaPkOS+myBgWHBvc2VkSGVscGVyc2DvvIzmiYDku6Xov5nkupvooaXkuIHoh6rlt7Hlrp7njrDmiYDpnIDnmoTkuIDlsI/pg6jliIbvvJoKICog5om+57G744CB5om+5pa55rOV77yI5oyJ5Y+C5pWw57G75Z6LL+S4quaVsO+8ieOAgeivu+WGmeWtl+auteOAgeiwg+eUqOaWueazleOAggogKgogKiDlhajpg6jmlrnms5Ui5om+5LiN5Yiw5bCx6L+U5ZueIG51bGwi77yM5LiN5oqb5byC5bi44oCU4oCU6KGl5LiB6KaB6IO95Zyo55uu5qCH5bqU55So5Y2H57qn44CB5re35reG5ZCN5Y+Y5YyW5pe2CiAqIOWuiemdmeWcsOmZjee6p+S4uiLlip/og73kuI3lj6/nlKgi77yM6ICM5LiN5piv5bSp5rqD44CCCiAqLwpvYmplY3QgUmVmbGVjdCB7CgogICAgLyoqIOaMieWQjeensOaJvuexu++8jOaUr+aMgeWcqOWkmuS4qiBjbGFzc2xvYWRlciDkuIrlsJ3or5XjgIIgKi8KICAgIGZ1biBmaW5kQ2xhc3MobmFtZTogU3RyaW5nLCBjbGFzc0xvYWRlcjogQ2xhc3NMb2FkZXI/KTogQ2xhc3M8Kj4/IHsKICAgICAgICB2YWwgbG9hZGVycyA9IGxpc3RPZk5vdE51bGwoY2xhc3NMb2FkZXIsIFRocmVhZC5jdXJyZW50VGhyZWFkKCkuY29udGV4dENsYXNzTG9hZGVyLCBSZWZsZWN0OjpjbGFzcy5qYXZhLmNsYXNzTG9hZGVyKQogICAgICAgIGZvciAoY2wgaW4gbG9hZGVycykgewogICAgICAgICAgICB2YWwgYyA9IHJ1bkNhdGNoaW5nIHsgQ2xhc3MuZm9yTmFtZShuYW1lLCBmYWxzZSwgY2wpIH0uZ2V0T3JOdWxsKCkKICAgICAgICAgICAgaWYgKGMgIT0gbnVsbCkgcmV0dXJuIGMKICAgICAgICB9CiAgICAgICAgcmV0dXJuIG51bGwKICAgIH0KCiAgICAvKiog5Zyo5LiA5Liq57G75Y+K5YW254i257G76ZO+5LiK5oyJ5ZCN56ewK+WPguaVsOS4quaVsOaJvuaWueazleOAgiAqLwogICAgZnVuIGZpbmRNZXRob2QoY2xheno6IENsYXNzPCo+LCBuYW1lOiBTdHJpbmcsIHBhcmFtQ291bnQ6IEludD8gPSBudWxsKTogTWV0aG9kPyB7CiAgICAgICAgdmFyIGM6IENsYXNzPCo+PyA9IGNsYXp6CiAgICAgICAgd2hpbGUgKGMgIT0gbnVsbCkgewogICAgICAgICAgICBmb3IgKG0gaW4gYy5kZWNsYXJlZE1ldGhvZHMpIHsKICAgICAgICAgICAgICAgIGlmIChtLm5hbWUgIT0gbmFtZSkgY29udGludWUKICAgICAgICAgICAgICAgIGlmIChwYXJhbUNvdW50ICE9IG51bGwgJiYgbS5wYXJhbWV0ZXJDb3VudCAhPSBwYXJhbUNvdW50KSBjb250aW51ZQogICAgICAgICAgICAgICAgcmV0dXJuIG0KICAgICAgICAgICAgfQogICAgICAgICAgICBjID0gYy5zdXBlcmNsYXNzCiAgICAgICAgfQogICAgICAgIHJldHVybiBudWxsCiAgICB9CgogICAgLyoqIOWcqOS4gOS4quexu+WPiuWFtueItuexu+mTvuS4iuaMieWQjeensOaJvioq5YWo6YOoKirlkIzlkI3mlrnms5XvvIjlkKvph43ovb3vvInjgIIgKi8KICAgIGZ1biBmaW5kTWV0aG9kcyhjbGF6ejogQ2xhc3M8Kj4sIG5hbWU6IFN0cmluZyk6IExpc3Q8TWV0aG9kPiB7CiAgICAgICAgdmFsIG91dCA9IG11dGFibGVMaXN0T2Y8TWV0aG9kPigpCiAgICAgICAgdmFyIGM6IENsYXNzPCo+PyA9IGNsYXp6CiAgICAgICAgd2hpbGUgKGMgIT0gbnVsbCkgewogICAgICAgICAgICBmb3IgKG0gaW4gYy5kZWNsYXJlZE1ldGhvZHMpIHsKICAgICAgICAgICAgICAgIGlmIChtLm5hbWUgPT0gbmFtZSkgb3V0ICs9IG0KICAgICAgICAgICAgfQogICAgICAgICAgICBjID0gYy5zdXBlcmNsYXNzCiAgICAgICAgfQogICAgICAgIHJldHVybiBvdXQKICAgIH0KCiAgICAvKioKICAgICAqIOeyvuehruWMuemFje+8muaWueazleWQjSArIOWPguaVsOexu+Wei+mAkOS4quWPr+i1i+WAvOOAggogICAgICog5LyY5YWI55So5a6D77yM6YG/5YWN6YeN6L295ZG95Lit6ZSZ6K+v55qE5pa55rOV44CCCiAgICAgKi8KICAgIGZ1biBmaW5kTWV0aG9kRXhhY3QoY2xheno6IENsYXNzPCo+LCBuYW1lOiBTdHJpbmcsIHZhcmFyZyBwYXJhbXM6IENsYXNzPCo+KTogTWV0aG9kPyB7CiAgICAgICAgdmFyIGM6IENsYXNzPCo+PyA9IGNsYXp6CiAgICAgICAgd2hpbGUgKGMgIT0gbnVsbCkgewogICAgICAgICAgICB2YWwgbSA9IHJ1bkNhdGNoaW5nIHsgYy5nZXREZWNsYXJlZE1ldGhvZChuYW1lLCAqcGFyYW1zKSB9LmdldE9yTnVsbCgpCiAgICAgICAgICAgIGlmIChtICE9IG51bGwpIHJldHVybiBtCiAgICAgICAgICAgIGMgPSBjLnN1cGVyY2xhc3MKICAgICAgICB9CiAgICAgICAgcmV0dXJuIG51bGwKICAgIH0KCiAgICAvKiog6K6p5Y+v5omn6KGM5a+56LGh5Y+v6KKr6LCD55So77yI5ZCr6Z2eIHB1YmxpYyDmiJDlkZjvvInjgIIgKi8KICAgIGZ1biBtYWtlQWNjZXNzaWJsZShlOiBFeGVjdXRhYmxlPyk6IEV4ZWN1dGFibGU/IHsKICAgICAgICBpZiAoZSA9PSBudWxsKSByZXR1cm4gbnVsbAogICAgICAgIHJ1bkNhdGNoaW5nIHsgZS5pc0FjY2Vzc2libGUgPSB0cnVlIH0KICAgICAgICByZXR1cm4gZQogICAgfQoKICAgIC8qKiDosIPnlKjmlrnms5XvvJvlpLHotKXov5Tlm54gbnVsbOOAgiAqLwogICAgZnVuIGNhbGxNZXRob2QodGFyZ2V0OiBBbnk/LCBtZXRob2Q6IE1ldGhvZD8sIHZhcmFyZyBhcmdzOiBBbnk/KTogQW55PyB7CiAgICAgICAgaWYgKHRhcmdldCA9PSBudWxsIHx8IG1ldGhvZCA9PSBudWxsKSByZXR1cm4gbnVsbAogICAgICAgIHJldHVybiBydW5DYXRjaGluZyB7CiAgICAgICAgICAgIG1ldGhvZC5pc0FjY2Vzc2libGUgPSB0cnVlCiAgICAgICAgICAgIG1ldGhvZC5pbnZva2UodGFyZ2V0LCAqYXJncykKICAgICAgICB9LmdldE9yTnVsbCgpCiAgICB9CgogICAgLyoqIOiwg+eUqOmdmeaAgeaWueazle+8iFtjYWxsTWV0aG9kXSDkuI3mjqXlj5cgbnVsbCB0YXJnZXTvvIzpnZnmgIHosIPnlKjotbDov5nph4zvvInvvJvlpLHotKXov5Tlm54gbnVsbOOAgiAqLwogICAgZnVuIGNhbGxTdGF0aWMobWV0aG9kOiBNZXRob2Q/LCB2YXJhcmcgYXJnczogQW55Pyk6IEFueT8gewogICAgICAgIGlmIChtZXRob2QgPT0gbnVsbCkgcmV0dXJuIG51bGwKICAgICAgICByZXR1cm4gcnVuQ2F0Y2hpbmcgewogICAgICAgICAgICBtZXRob2QuaXNBY2Nlc3NpYmxlID0gdHJ1ZQogICAgICAgICAgICBtZXRob2QuaW52b2tlKG51bGwsICphcmdzKQogICAgICAgIH0uZ2V0T3JOdWxsKCkKICAgIH0KCiAgICAvKiog5Zyo57G757un5om/6ZO+5LiK5oyJ5ZCN56ew6K+75Y+W5a2X5q6144CCICovCiAgICBmdW4gZ2V0RmllbGQodGFyZ2V0OiBBbnk/LCBuYW1lOiBTdHJpbmcpOiBBbnk/IHsKICAgICAgICBpZiAodGFyZ2V0ID09IG51bGwpIHJldHVybiBudWxsCiAgICAgICAgdmFyIGM6IENsYXNzPCo+PyA9IHRhcmdldC5qYXZhQ2xhc3MKICAgICAgICB3aGlsZSAoYyAhPSBudWxsKSB7CiAgICAgICAgICAgIHZhbCBmID0gcnVuQ2F0Y2hpbmcgeyBjLmdldERlY2xhcmVkRmllbGQobmFtZSkgfS5nZXRPck51bGwoKQogICAgICAgICAgICBpZiAoZiAhPSBudWxsKSB7CiAgICAgICAgICAgICAgICByZXR1cm4gcnVuQ2F0Y2hpbmcgewogICAgICAgICAgICAgICAgICAgIGYuaXNBY2Nlc3NpYmxlID0gdHJ1ZQogICAgICAgICAgICAgICAgICAgIGYuZ2V0KHRhcmdldCkKICAgICAgICAgICAgICAgIH0uZ2V0T3JOdWxsKCkKICAgICAgICAgICAgfQogICAgICAgICAgICBjID0gYy5zdXBlcmNsYXNzCiAgICAgICAgfQogICAgICAgIHJldHVybiBudWxsCiAgICB9CgogICAgLyoqIOWGmeWtl+aute+8m+aIkOWKn+i/lOWbniB0cnVl44CCICovCiAgICBmdW4gc2V0RmllbGQodGFyZ2V0OiBBbnk/LCBuYW1lOiBTdHJpbmcsIHZhbHVlOiBBbnk/KTogQm9vbGVhbiB7CiAgICAgICAgaWYgKHRhcmdldCA9PSBudWxsKSByZXR1cm4gZmFsc2UKICAgICAgICB2YXIgYzogQ2xhc3M8Kj4/ID0gdGFyZ2V0LmphdmFDbGFzcwogICAgICAgIHdoaWxlIChjICE9IG51bGwpIHsKICAgICAgICAgICAgdmFsIGYgPSBydW5DYXRjaGluZyB7IGMuZ2V0RGVjbGFyZWRGaWVsZChuYW1lKSB9LmdldE9yTnVsbCgpCiAgICAgICAgICAgIGlmIChmICE9IG51bGwpIHsKICAgICAgICAgICAgICAgIHJldHVybiBydW5DYXRjaGluZyB7CiAgICAgICAgICAgICAgICAgICAgZi5pc0FjY2Vzc2libGUgPSB0cnVlCiAgICAgICAgICAgICAgICAgICAgZi5zZXQodGFyZ2V0LCB2YWx1ZSkKICAgICAgICAgICAgICAgICAgICB0cnVlCiAgICAgICAgICAgICAgICB9LmdldE9yRGVmYXVsdChmYWxzZSkKICAgICAgICAgICAgfQogICAgICAgICAgICBjID0gYy5zdXBlcmNsYXNzCiAgICAgICAgfQogICAgICAgIHJldHVybiBmYWxzZQogICAgfQoKICAgIC8qKiDor7vpnZnmgIHlrZfmrrXjgIIgKi8KICAgIGZ1biBnZXRTdGF0aWNGaWVsZChjbGF6ejogQ2xhc3M8Kj4/LCBuYW1lOiBTdHJpbmcpOiBBbnk/IHsKICAgICAgICBpZiAoY2xhenogPT0gbnVsbCkgcmV0dXJuIG51bGwKICAgICAgICByZXR1cm4gcnVuQ2F0Y2hpbmcgewogICAgICAgICAgICB2YWwgZiA9IGNsYXp6LmdldERlY2xhcmVkRmllbGQobmFtZSkKICAgICAgICAgICAgZi5pc0FjY2Vzc2libGUgPSB0cnVlCiAgICAgICAgICAgIGYuZ2V0KG51bGwpCiAgICAgICAgfS5nZXRPck51bGwoKQogICAgfQoKICAgIC8qKiDor7vpnZnmgIEgaW50IOWtl+aute+8jOaJvuS4jeWIsOi/lOWbniBudWxs44CCICovCiAgICBmdW4gZ2V0U3RhdGljSW50KGNsYXp6OiBDbGFzczwqPj8sIG5hbWU6IFN0cmluZyk6IEludD8gewogICAgICAgIHJldHVybiAoZ2V0U3RhdGljRmllbGQoY2xhenosIG5hbWUpIGFzPyBJbnQpCiAgICB9Cn0K
+package io.relimus.zflow.compat.xposed.util
+
+import java.lang.reflect.Executable
+import java.lang.reflect.Method
+
+/**
+ * 极简反射工具。
+ *
+ * 现代 Xposed API（102）不再提供 `XposedHelpers`，所以这些补丁自己实现所需的一小部分：
+ * 找类、找方法（按参数类型/个数）、读写字段、调用方法。
+ *
+ * 全部方法"找不到就返回 null"，不抛异常——补丁要能在目标应用升级、混淆名变化时
+ * 安静地降级为"功能不可用"，而不是崩溃。
+ */
+object Reflect {
+
+    /** 按名称找类，支持在多个 classloader 上尝试。 */
+    fun findClass(name: String, classLoader: ClassLoader?): Class<*>? {
+        val loaders = listOfNotNull(classLoader, Thread.currentThread().contextClassLoader, Reflect::class.java.classLoader)
+        for (cl in loaders) {
+            val c = runCatching { Class.forName(name, false, cl) }.getOrNull()
+            if (c != null) return c
+        }
+        return null
+    }
+
+    /** 在一个类及其父类链上按名称+参数个数找方法。 */
+    fun findMethod(clazz: Class<*>, name: String, paramCount: Int? = null): Method? {
+        var c: Class<*>? = clazz
+        while (c != null) {
+            for (m in c.declaredMethods) {
+                if (m.name != name) continue
+                if (paramCount != null && m.parameterCount != paramCount) continue
+                return m
+            }
+            c = c.superclass
+        }
+        return null
+    }
+
+    /** 在一个类及其父类链上按名称找**全部**同名方法（含重载）。 */
+    fun findMethods(clazz: Class<*>, name: String): List<Method> {
+        val out = mutableListOf<Method>()
+        var c: Class<*>? = clazz
+        while (c != null) {
+            for (m in c.declaredMethods) {
+                if (m.name == name) out += m
+            }
+            c = c.superclass
+        }
+        return out
+    }
+
+    /**
+     * 精确匹配：方法名 + 参数类型逐个可赋值。
+     * 优先用它，避免重载命中错误的方法。
+     */
+    fun findMethodExact(clazz: Class<*>, name: String, vararg params: Class<*>): Method? {
+        var c: Class<*>? = clazz
+        while (c != null) {
+            val m = runCatching { c.getDeclaredMethod(name, *params) }.getOrNull()
+            if (m != null) return m
+            c = c.superclass
+        }
+        return null
+    }
+
+    /** 让可执行对象可被调用（含非 public 成员）。 */
+    fun makeAccessible(e: Executable?): Executable? {
+        if (e == null) return null
+        runCatching { e.isAccessible = true }
+        return e
+    }
+
+    /** 调用方法；失败返回 null。 */
+    fun callMethod(target: Any?, method: Method?, vararg args: Any?): Any? {
+        if (target == null || method == null) return null
+        return runCatching {
+            method.isAccessible = true
+            method.invoke(target, *args)
+        }.getOrNull()
+    }
+
+    /** 调用静态方法（[callMethod] 不接受 null target，静态调用走这里）；失败返回 null。 */
+    fun callStatic(method: Method?, vararg args: Any?): Any? {
+        if (method == null) return null
+        return runCatching {
+            method.isAccessible = true
+            method.invoke(null, *args)
+        }.getOrNull()
+    }
+
+    /** 在类继承链上按名称读取字段。 */
+    fun getField(target: Any?, name: String): Any? {
+        if (target == null) return null
+        var c: Class<*>? = target.javaClass
+        while (c != null) {
+            val f = runCatching { c.getDeclaredField(name) }.getOrNull()
+            if (f != null) {
+                return runCatching {
+                    f.isAccessible = true
+                    f.get(target)
+                }.getOrNull()
+            }
+            c = c.superclass
+        }
+        return null
+    }
+
+    /** 写字段；成功返回 true。 */
+    fun setField(target: Any?, name: String, value: Any?): Boolean {
+        if (target == null) return false
+        var c: Class<*>? = target.javaClass
+        while (c != null) {
+            val f = runCatching { c.getDeclaredField(name) }.getOrNull()
+            if (f != null) {
+                return runCatching {
+                    f.isAccessible = true
+                    f.set(target, value)
+                    true
+                }.getOrDefault(false)
+            }
+            c = c.superclass
+        }
+        return false
+    }
+
+    /** 读静态字段。 */
+    fun getStaticField(clazz: Class<*>?, name: String): Any? {
+        if (clazz == null) return null
+        return runCatching {
+            val f = clazz.getDeclaredField(name)
+            f.isAccessible = true
+            f.get(null)
+        }.getOrNull()
+    }
+
+    /** 读静态 int 字段，找不到返回 null。 */
+    fun getStaticInt(clazz: Class<*>?, name: String): Int? {
+        return (getStaticField(clazz, name) as? Int)
+    }
+}
