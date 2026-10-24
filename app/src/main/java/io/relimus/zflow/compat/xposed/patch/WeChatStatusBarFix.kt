@@ -1,12 +1,16 @@
 package io.relimus.zflow.compat.xposed.patch
 
 import android.content.Context
+import android.content.res.Configuration
+import android.os.Handler
+import android.os.Looper
 import android.view.Display
 import io.github.libxposed.api.XposedModule
 import io.relimus.zflow.compat.xposed.util.PatchLog
 import io.relimus.zflow.compat.xposed.util.PatchSettings
 import io.relimus.zflow.compat.xposed.util.Reflect
 import java.lang.reflect.Method
+import java.util.Optional
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -19,46 +23,73 @@ import java.util.concurrent.atomic.AtomicBoolean
  * 通讯录/发现等 tab 页顶部被拉宽或功能项被顶出屏幕。
  *
  * 反编译微信 8.0.79 确认：主界面（微信 tab / 通讯录 / 发现）的状态栏高度全部来自
- * `com.tencent.mm.ui.ol#i(Context, int)`（WeUIToolHelper.getStatusBarHeight）：
+ * WeUIToolHelper 的 `int i(Context, int)`（8.0.79 为 `com.tencent.mm.ui.ol`，
+ * 8.0.76 为 `com.tencent.mm.ui.bl`）：
  *
- * ```
- * MainUI.K0 / MainUI.C0（微信 tab）、FindMoreFriendsUI.a1/N1（发现）、
- * BaseAddressUIFragment.I0/M0（通讯录）… 全部调用 ol.i(ctx, -1)
- * ```
+ * `ol/bl.i` 内部：
  *
- * `ol.i` 内部：
- *
- * 1. 先尝试从 `WindowInsets` 类取状态栏高度（`n3.g3.a(1).b`），取不到为 0；
- * 2. 若该值 < 25dp，走 `ol.k` 反射读 `com.android.internal.R$dimen.status_bar_height`
+ * 1. 先尝试从 `WindowInsets` 类取状态栏高度，取不到为 0；
+ * 2. 若该值 < 25dp，反射读 `com.android.internal.R$dimen.status_bar_height`
  *    （真机 124px）；
  * 3. 微信自己的 `[fixStatusBarHeight]` 用
- *    `displayHeight - windowVisibleFrame.height` 估算真实状态栏高度：
+ *    `displayHeight - windowVisibleFrame.height` 估算真实状态栏高度，
+ *    但只接受"比系统值更大、且差距小于 100px"的修正值：
  *    - 主屏：估算 ≈ 124 → 与系统值一致，正常；
- *    - 虚拟屏：无系统状态栏 → 估算 ≈ 0 → `if-le` 不采用 → 仍返回 124px；
+ *    - 虚拟屏：估算 ≈ 0 → `if-le` 不采用 → 仍返回 124px；
  *
- * 于是小窗里微信把 124px 的“幽灵状态栏高度”注入所有 tab 页布局 → 顶部出现
+ * 于是小窗里微信把 124px 的“幽灵状态栏高度”注入 tab 页布局 → 顶部出现
  * 双标题栏 / 空额头 / 功能项被顶下去 / 不可点击的第二行。
  *
- * ## 旧实现为什么失效
+ * ## 首页布局链路与“切回小窗后双行残留”的根因（8.0.76 实测反编译）
  *
- * 旧实现 hook `ol.h(Context)`。反编译 8.0.79 的 xref 显示 `ol.h` 只被
- * 视频号(Finder)、设置、webview 等**次级页面**调用，主界面三个 tab 全部走
- * `ol.i(Context, int)`。所以旧补丁“挂钩成功但从不触发”——日志里没有任何
- * “非主屏 → 状态栏高度置 0”的运行记录，与用户观察完全吻合。
+ * ```
+ * MainUI.y0()                          ← 8.0.79 为 K0()，m0/onConfigurationChanged 触发
+ *   status = bl.i(ctx, -1)             ← 幽灵高度入口
+ *   if (status <= 0) { post(l7); return; }   ← 归零补丁生效后永远走这里！
+ *   else u0(margin, status)            ← 8.0.79 为 H0()
+ * conversation.l7.run()                ← 8.0.79 为 w7，重试 3 次
+ *   status = bl.i(ctx, -1)
+ *   if (status <= 0) { retry/give up; return; }   ← 同样永远不调 u0
+ *   else u0(margin, status)
+ * ```
  *
- * ## 做法
+ * `u0(int,int)` 是列表 topMargin 和状态栏 mask 高度的唯一写入者，带守卫：
+ * **当前值 > 0 且 H=false（isInMultiWindowMode）时整体跳过**；H=true 时无条件清零。
+ * 虚拟屏上 `isInMultiWindowMode()` 为 false（它是独立屏幕，不是平台多窗口）。
  *
- * hook `ol.i(Context, int)`，非主屏时返回 0：
- * - 小窗：所有主界面 tab 的状态栏高度变为 0 → 不预留幽灵状态栏 → 双标题栏消失；
- * - 主屏：返回值不被使用或与实际一致，行为不变。
+ * 于是：全屏阶段 u0 写入 margin=actionBar / mask=124 → 切回小窗后 bl.i 被归零
+ * → y0/l7 全部提前 return，u0 一次都不会被调用 → 全屏残留的 124px mask 永久留在
+ * 首页 → 双行状态栏。旧补丁挂在 u0（H0）上的“临时置 H=true”钩子因此是死代码：
+ * 它等待的调用永远不会发生。这就是“多次小窗-全屏-小窗切换后偶尔双行”的根源。
  *
- * `ol.i` 的第二个参数在全部主界面调用点都是 `-1`（fallback 值），hook 时不必校验。
+ * ## 根治做法
+ *
+ * 1. hook `bl/ol.i(Context, int)`：虚拟屏 + 首页（conversation.*）调用返回 0
+ *    （消除幽灵高度本身）；
+ * 2. hook `MainUI.onConfigurationChanged`（框架方法名，永不混淆；跨屏切换必触发）：
+ *    微信自己的逻辑跑完后，若仍在虚拟屏，主动调用一次布局方法 `u0(0,0)`，
+ *    调用期间临时把字段 H 置 true，让微信自己的“多窗口强制清零”分支把
+ *    topMargin/mask 归零（与冷启动小窗的正确布局一致），随后恢复 H；
+ * 3. 兜底 hook `u0`（按 `(II)V` 签名在 MainUI 内唯一定位，不依赖混淆名）：
+ *    虚拟屏上被调用时同样临时置 H=true，防止显示切换竞态期间写入全屏值。
+ *
+ * 主屏（DEFAULT_DISPLAY）一律放行原逻辑。
+ *
+ * ## 通讯录 / 发现 / 聊天容器（8.0.76 变化）
+ *
+ * 8.0.76 里 `Main_top_marign`（微信原始拼写）全屏缓存的读取者从通讯录一个变成三个：
+ *
+ * - `BaseAddressUIFragment.u0()`（8.0.79 为 I0）：ActionBar + statusHeight/缓存；
+ * - `FindMoreFriendsUI.L0()`：同构逻辑，8.0.79 无缓存分支、8.0.76 新增；
+ * - `NewChattingTabUI.j()`：返回纯状态栏高度（不加 ActionBar），也读缓存。
+ *
+ * 虚拟屏上分别拦截：前两者只返回微信自己的 ActionBar 高度，后者返回 0。
  *
  * ## 混淆名会随版本变化
  *
- * 类名 `com.tencent.mm.ui.ol` 与方法名 `i` 都是混淆产物。微信升级后可能整体改名，
- * 补丁会"静默跳过"（行为与不装补丁一致）。打开设置里的**详细日志**后，
- * LSPosed 日志会完整打印探测过程，可直接判断是类名变了还是方法名变了。
+ * 类名（`ui.bl` / `ui.ol`）与方法名（`i` / `u0` / `L0` …）都是混淆产物。补丁按
+ * “候选列表 + 签名扫描”双路探测，升级后新名字未收录时静默跳过（行为与不装补丁
+ * 一致）。打开设置里的**详细日志**可看到完整探测过程。新版本适配流程见 README。
  */
 object WeChatStatusBarFix {
 
@@ -67,11 +98,12 @@ object WeChatStatusBarFix {
     /**
      * 候选类名：混淆名随版本变化，按顺序尝试，命中即止。
      *
-     * - `ui.ol`：8.0.79（当前实测版本）命中，`i(Context,int)` 为状态栏高度主入口
-     *   （主界面三个 tab 全部走它；`h(Context)` 只是次级页面的薄包装）。
+     * - `ui.bl`：8.0.76（当前实测版本）命中，`i(Context,int)` 为状态栏高度主入口；
+     * - `ui.ol`：8.0.79 命中，同签名；
      * - `ui.gl` / `ui.gk` / `ui.gm`：8.0.5x 及更早版本的历史名，保留兜底。
      */
     private val CANDIDATE_CLASSES = listOf(
+        "com.tencent.mm.ui.bl",
         "com.tencent.mm.ui.ol",
         "com.tencent.mm.ui.gl",
         "com.tencent.mm.ui.gk",
@@ -84,7 +116,7 @@ object WeChatStatusBarFix {
     /** 兜底方法名：`int h(Context)` —— 旧版本 / 次级页面入口 */
     private const val FALLBACK_METHOD = "h"
 
-    /** 微信 Tinker 热更新加载器；补丁 dex 会替换 base.apk 里的 ui.ol。 */
+    /** 微信 Tinker 热更新加载器；补丁 dex 会替换 base.apk 里的工具类。 */
     private const val TINKER_LOADER = "com.tencent.tinker.loader.TinkerLoader"
 
     /** 每个实际 ClassLoader 只安装一次，避免 base 与 Tinker 回调重复挂钩。 */
@@ -92,6 +124,49 @@ object WeChatStatusBarFix {
 
     /** TinkerLoader.tryLoad 仅需挂一次。 */
     private val tinkerHookInstalled = AtomicBoolean(false)
+
+    /** MainUI 布局方法（`(II)V`）与 getContext 的解析缓存（Optional 允许缓存"未找到"）。 */
+    private val marginSetterCache = ConcurrentHashMap<Class<*>, Optional<Method>>()
+    private val getContextCache = ConcurrentHashMap<Class<*>, Optional<Method>>()
+
+    /** 跨屏切换后的延迟兜底清零：等微信自身的 y0/l7 重试链全部跑完。 */
+    private const val HOME_RESET_DELAY_MS = 300L
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    /**
+     * `Main_top_marign` 全屏缓存的读取者（8.0.76）。虚拟屏上拦截，主屏放行。
+     *
+     * @param actionBarOnly true = 返回值是“ActionBar + 顶部偏移”的总高度，拦截后只保留
+     *   ActionBar 部分（工具类 `a(Context)`）；false = 返回值是纯状态栏高度，拦截后归 0。
+     */
+    private data class TopHeightTarget(
+        val className: String,
+        val label: String,
+        val methodNames: List<String>,
+        val actionBarOnly: Boolean,
+    )
+
+    private val TOP_HEIGHT_TARGETS = listOf(
+        TopHeightTarget(
+            "com.tencent.mm.ui.contact.address.BaseAddressUIFragment",
+            "通讯录",
+            methodNames = listOf("u0", "I0"), // 8.0.76 / 8.0.79
+            actionBarOnly = true,
+        ),
+        TopHeightTarget(
+            "com.tencent.mm.ui.FindMoreFriendsUI",
+            "发现",
+            methodNames = listOf("L0"), // 8.0.76 新增缓存分支
+            actionBarOnly = true,
+        ),
+        TopHeightTarget(
+            "com.tencent.mm.ui.NewChattingTabUI",
+            "聊天容器",
+            methodNames = listOf("j"),
+            actionBarOnly = false,
+        ),
+    )
 
     fun install(module: XposedModule, classLoader: ClassLoader, pkg: String) {
         if (pkg != "com.tencent.mm") return
@@ -123,7 +198,7 @@ object WeChatStatusBarFix {
             val method = resolveTarget(clazz, className) ?: continue
             if (hookMethod(module, method, className)) {
                 hookHomeLayoutReset(module, classLoader, source)
-                hookContactTopHeight(module, classLoader, source)
+                hookTopHeightGetters(module, classLoader, source, clazz)
                 return true
             }
         }
@@ -134,7 +209,7 @@ object WeChatStatusBarFix {
     }
 
     /**
-     * 微信在 onPackageReady 之后才加载 Tinker 补丁 dex。base.apk 中的 ui.ol 虽能挂钩，
+     * 微信在 onPackageReady 之后才加载 Tinker 补丁 dex。base.apk 中的工具类虽能挂钩，
      * 但运行时由 DelegateLastClassLoader 中的补丁类替代，因此必须在 tryLoad 返回后
      * 对当前线程 contextClassLoader 再安装一次。
      */
@@ -171,9 +246,15 @@ object WeChatStatusBarFix {
     }
 
     /**
-     * 首页从主屏切回虚拟屏时，MainUI.H0() 可能因为旧 topMargin / mask 高度 > 0
-     * 且字段 H 尚未切到 multi-window 而拒绝覆盖，导致双行残留。临时将 H 设为 true，
-     * 让微信自身 H0() 把列表 topMargin 和 status-bar mask 高度清零，随后恢复字段。
+     * 首页残留清零，两个钩子配合（见类注释“根治做法”）：
+     *
+     * 1. `MainUI.onConfigurationChanged` —— 框架方法名永不混淆，且跨屏切换必然触发。
+     *    微信自身逻辑（更新 H、调 y0）跑完后仍在虚拟屏的话，post 一个清零任务；
+     * 2. `(II)V` 布局方法 —— 按签名在 MainUI 内唯一定位（8.0.76 为 u0、8.0.79 为 H0），
+     *    兜底处理“显示切换竞态期间带着全屏参数被调用”的情况。
+     *
+     * 清零本身复用微信 H=true 的“多窗口强制清零”分支：临时把 H 置 true、调用
+     * `u0(0,0)`、恢复 H。冷启动小窗的正确布局（margin=0/mask=0）与此一致。
      */
     private fun hookHomeLayoutReset(
         module: XposedModule,
@@ -185,95 +266,182 @@ object WeChatStatusBarFix {
             PatchLog.debug("$NAME: source=$source 未找到首页类 $className")
             return
         }
-        val intPrimitive = Int::class.javaPrimitiveType ?: return
-        val method = Reflect.findMethodExact(clazz, "H0", intPrimitive, intPrimitive) ?: run {
-            PatchLog.debug("$NAME: source=$source 未找到首页 H0(int,int)")
-            return
+
+        // 1) 显示切换触发器
+        val onConfig = Reflect.findMethodExact(
+            clazz, "onConfigurationChanged", Configuration::class.java
+        )
+        if (onConfig == null) {
+            PatchLog.debug("$NAME: source=$source 未找到首页 onConfigurationChanged")
+        } else {
+            runCatching {
+                module.hook(onConfig).intercept { chain ->
+                    val result = chain.proceed()
+                    val mainUi = chain.thisObject
+                    if (mainUi != null && isVirtualDisplay(mainUi)) {
+                        scheduleHomeReset(mainUi)
+                    }
+                    result
+                }
+                PatchLog.info("$NAME: source=$source 已挂钩首页 onConfigurationChanged，跨屏切换后主动清零")
+            }.onFailure {
+                PatchLog.warn("$NAME: source=$source 挂钩首页 onConfigurationChanged 失败", it)
+            }
         }
 
+        // 2) u0/H0 兜底（签名定位，不依赖混淆名）
+        val setter = findMarginSetter(clazz)
+        if (setter == null) {
+            PatchLog.debug("$NAME: source=$source 未能在 $className 唯一定位 (II)V 布局方法，跳过兜底钩子")
+            return
+        }
         runCatching {
-            module.hook(method).intercept { chain ->
+            module.hook(setter).intercept { chain ->
                 val mainUi = chain.thisObject ?: return@intercept chain.proceed()
-                val getContext = Reflect.findMethod(mainUi.javaClass, "getContext", 0)
-                val ctx = Reflect.callMethod(mainUi, getContext) as? Context
-                val displayId = runCatching { ctx?.display?.displayId }.getOrNull()
-                if (displayId == null || displayId == Display.DEFAULT_DISPLAY ||
-                    !PatchSettings.isEnabled(ctx, PatchSettings.KEY_WECHAT_STATUSBAR_FIX)
+                if (!isVirtualDisplay(mainUi) ||
+                    !PatchSettings.isEnabled(null, PatchSettings.KEY_WECHAT_STATUSBAR_FIX)
                 ) {
                     return@intercept chain.proceed()
                 }
-
                 val old = Reflect.getField(mainUi, "H") as? Boolean
                 if (old == null || !Reflect.setField(mainUi, "H", true)) {
                     return@intercept chain.proceed()
                 }
                 try {
-                    PatchLog.debug(
-                        "$NAME: displayId=$displayId 首页 H0() 临时设 H=true，清零残留 margin/mask"
-                    )
+                    PatchLog.debug("$NAME: 布局方法被调用，临时 H=true 强制清零 margin/mask")
                     chain.proceed()
                 } finally {
                     Reflect.setField(mainUi, "H", old)
                 }
             }
-            PatchLog.info("$NAME: source=$source 已挂钩首页 H0()，清除跨屏残留 margin/mask")
+            PatchLog.info("$NAME: source=$source 已挂钩首页 ${setter.name}(II)，竞态期间强制清零")
         }.onFailure {
-            PatchLog.warn("$NAME: source=$source 挂钩首页 H0() 失败", it)
+            PatchLog.warn("$NAME: source=$source 挂钩首页 ${setter.name}(II) 失败", it)
         }
     }
 
     /**
-     * 通讯录单独维护顶部高度：ActionBar + statusHeight / root.getTop +
-     * SharedPreferences(Main_top_marign)。展开窗口时缓存被写入，缩回小窗后仍会读取，
-     * 因而只有通讯录再次变宽。虚拟屏上直接返回 ActionBar 高度，忽略主屏缓存；
-     * 主屏放行原逻辑。
+     * post 到主线程执行清零：立即一次 + 延迟一次（等 y0/l7 的异步重试链跑完）。
+     * 执行时复查仍在虚拟屏，避免与用户的下一次切屏竞争。
      */
-    private fun hookContactTopHeight(
+    private fun scheduleHomeReset(mainUi: Any) {
+        val doReset = Runnable {
+            if (!isVirtualDisplay(mainUi)) return@Runnable
+            if (!PatchSettings.isEnabled(null, PatchSettings.KEY_WECHAT_STATUSBAR_FIX)) return@Runnable
+            forceClearHomeMargins(mainUi)
+        }
+        mainHandler.post(doReset)
+        mainHandler.postDelayed(doReset, HOME_RESET_DELAY_MS)
+    }
+
+    /** 借微信自己的 H=true 分支把列表 topMargin 与状态栏 mask 高度清零。 */
+    private fun forceClearHomeMargins(mainUi: Any) {
+        val setter = findMarginSetter(mainUi.javaClass) ?: return
+        val old = Reflect.getField(mainUi, "H") as? Boolean
+        if (old == null || !Reflect.setField(mainUi, "H", true)) {
+            PatchLog.debug("$NAME: 首页字段 H 不可用，跳过清零")
+            return
+        }
+        try {
+            PatchLog.debug("$NAME: 首页清零 margin/mask（临时 H=true 走微信强制清零分支）")
+            Reflect.callMethod(mainUi, setter, 0, 0)
+        } finally {
+            Reflect.setField(mainUi, "H", old)
+        }
+    }
+
+    /** 在 MainUI 的已声明方法里按 `(II)V` 签名唯一定位布局方法（u0/H0）。 */
+    private fun findMarginSetter(clazz: Class<*>): Method? {
+        return marginSetterCache.getOrPut(clazz) {
+            val intPrimitive = Int::class.javaPrimitiveType
+            val matches = clazz.declaredMethods.filter { m ->
+                m.parameterCount == 2 &&
+                    m.parameterTypes[0] == intPrimitive &&
+                    m.parameterTypes[1] == intPrimitive &&
+                    m.returnType == Void.TYPE
+            }
+            when (matches.size) {
+                1 -> Optional.of(matches[0])
+                0 -> {
+                    PatchLog.debug("$NAME: ${clazz.name} 内无 (II)V 布局方法")
+                    Optional.empty()
+                }
+                else -> {
+                    PatchLog.warn("$NAME: ${clazz.name} 内有 ${matches.size} 个 (II)V 方法，无法唯一定位")
+                    Optional.empty()
+                }
+            }
+        }.orElse(null)
+    }
+
+    /**
+     * 拦截 `Main_top_marign` 缓存读取者（通讯录 / 发现 / 聊天容器）。
+     * 虚拟屏上：actionBarOnly 的目标只返回微信 ActionBar 高度（忽略缓存与幽灵状态栏），
+     * 其余返回 0；主屏放行原逻辑。
+     */
+    private fun hookTopHeightGetters(
         module: XposedModule,
         classLoader: ClassLoader,
         source: String,
+        helperClass: Class<*>,
     ) {
-        val className = "com.tencent.mm.ui.contact.address.BaseAddressUIFragment"
-        val clazz = runCatching { Class.forName(className, false, classLoader) }.getOrNull() ?: run {
-            PatchLog.debug("$NAME: source=$source 未找到通讯录类 $className")
-            return
+        val actionBarHeight = Reflect.findMethodExact(helperClass, "a", Context::class.java)
+        if (actionBarHeight == null) {
+            PatchLog.debug(
+                "$NAME: ${helperClass.name} 无 a(Context)，" +
+                    "actionBarOnly 目标在虚拟屏上将放行原逻辑"
+            )
         }
-        val method = Reflect.findMethodExact(clazz, "I0") ?: run {
-            PatchLog.debug("$NAME: source=$source 未找到通讯录 I0()")
-            return
-        }
-        runCatching {
-            module.hook(method).intercept { chain ->
-                val fragment = chain.thisObject ?: return@intercept chain.proceed()
-                val getContext = Reflect.findMethod(fragment.javaClass, "getContext", 0)
-                val ctx = Reflect.callMethod(fragment, getContext) as? Context
-                val displayId = runCatching { ctx?.display?.displayId }.getOrNull()
-                if (displayId == null || displayId == Display.DEFAULT_DISPLAY ||
-                    !PatchSettings.isEnabled(ctx, PatchSettings.KEY_WECHAT_STATUSBAR_FIX)
-                ) {
-                    return@intercept chain.proceed()
-                }
 
-                // ol.a(Context) 是微信 ActionBar 高度入口；I0 原逻辑在它上面继续叠加
-                // statusHeight / root.getTop / Main_top_marign，正是残留宽度来源。
-                val helper = runCatching {
-                    Class.forName("com.tencent.mm.ui.ol", false, classLoader)
-                }.getOrNull() ?: return@intercept chain.proceed()
-                val actionBar = Reflect.findMethodExact(helper, "a", Context::class.java)
-                    ?: return@intercept chain.proceed()
-                val height = runCatching {
-                    actionBar.isAccessible = true
-                    actionBar.invoke(null, ctx) as? Int
-                }.getOrNull() ?: return@intercept chain.proceed()
-
-                PatchLog.debug(
-                    "$NAME: displayId=$displayId 通讯录 I0() → 仅保留 ActionBar 高度 $height"
-                )
-                height
+        for (target in TOP_HEIGHT_TARGETS) {
+            val clazz = runCatching { Class.forName(target.className, false, classLoader) }.getOrNull() ?: run {
+                PatchLog.debug("$NAME: source=$source 未找到${target.label}类 ${target.className}")
+                continue
             }
-            PatchLog.info("$NAME: source=$source 已挂钩通讯录 I0()，清除跨窗口 Main_top_marign")
-        }.onFailure {
-            PatchLog.warn("$NAME: source=$source 挂钩通讯录 I0() 失败", it)
+            val method = target.methodNames.firstNotNullOfOrNull { Reflect.findMethodExact(clazz, it) }
+            if (method == null) {
+                PatchLog.debug("$NAME: source=$source ${target.label}无候选方法 ${target.methodNames}")
+                continue
+            }
+            runCatching {
+                module.hook(method).intercept { chain ->
+                    val fragment = chain.thisObject ?: return@intercept chain.proceed()
+                    val displayId = displayIdOf(fragment)
+                    if (displayId == null || displayId == Display.DEFAULT_DISPLAY ||
+                        !PatchSettings.isEnabled(null, PatchSettings.KEY_WECHAT_STATUSBAR_FIX)
+                    ) {
+                        return@intercept chain.proceed()
+                    }
+
+                    if (!target.actionBarOnly) {
+                        PatchLog.debug(
+                            "$NAME: displayId=$displayId ${target.label}返回纯状态栏高度 → 0"
+                        )
+                        return@intercept 0
+                    }
+
+                    val getContext = getContextCache.getOrPut(fragment.javaClass) {
+                        Optional.ofNullable(Reflect.findMethod(fragment.javaClass, "getContext", 0))
+                    }.orElse(null)
+                    val ctx = Reflect.callMethod(fragment, getContext) as? Context
+                    if (ctx == null || actionBarHeight == null) {
+                        return@intercept chain.proceed()
+                    }
+                    val height = Reflect.callStatic(actionBarHeight, ctx) as? Int
+                        ?: return@intercept chain.proceed()
+
+                    PatchLog.debug(
+                        "$NAME: displayId=$displayId ${target.label}顶部总高度 → 仅 ActionBar $height"
+                    )
+                    height
+                }
+                PatchLog.info(
+                    "$NAME: source=$source 已挂钩${target.label} ${clazz.simpleName}#${method.name}()" +
+                        if (target.actionBarOnly) "（仅保留 ActionBar 高度）" else "（状态栏高度归 0）"
+                )
+            }.onFailure {
+                PatchLog.warn("$NAME: source=$source 挂钩${target.label} ${method.name} 失败", it)
+            }
         }
     }
 
@@ -313,7 +481,7 @@ object WeChatStatusBarFix {
                 }
                 patch(ctx, chain)
             }
-            PatchLog.info("$NAME: 已挂钩 $className#${method.name} —— 非主屏仅首页会话列表高度归零")
+            PatchLog.info("$NAME: 已挂钩 $className#${method.name} —— 虚拟屏仅首页会话列表高度归零")
             true
         }.onFailure {
             PatchLog.warn("$NAME: 挂钩 $className#${method.name} 失败", it)
@@ -346,7 +514,7 @@ object WeChatStatusBarFix {
             return chain.proceed()
         }
 
-        // ol.i 是全局入口：通讯录、发现和首页都会调用。冷启动小窗时若全部归零，
+        // i(Context,int) 是全局入口：通讯录、发现和首页都会调用。冷启动小窗时若全部归零，
         // 通讯录/发现首项会被标题栏覆盖；它们需要保留微信原始高度。只有首页的
         // MainUI / conversation 调用需要归零，消除透明的第二行标题栏。
         val caller = Throwable().stackTrace.firstOrNull { frame ->
@@ -363,6 +531,24 @@ object WeChatStatusBarFix {
             "$NAME: displayId=$displayId 首页调用 ${caller.className}#${caller.methodName} → 状态栏高度置 0"
         )
         return 0
+    }
+
+    /** Fragment/Activity 当前是否位于虚拟屏（非默认显示设备）。无法判定时按主屏处理。 */
+    private fun isVirtualDisplay(target: Any): Boolean {
+        val displayId = displayIdOf(target)
+        return displayId != null && displayId != Display.DEFAULT_DISPLAY
+    }
+
+    /** 取宿主 Fragment 的 Context 再取 displayId；结果缓存 getContext 解析。 */
+    private fun displayIdOf(target: Any): Int? {
+        val getContext = getContextCache.getOrPut(target.javaClass) {
+            Optional.ofNullable(Reflect.findMethod(target.javaClass, "getContext", 0))
+        }.orElse(null) ?: run {
+            PatchLog.debug("$NAME: ${target.javaClass.name} 无 getContext，按主屏处理")
+            return null
+        }
+        val ctx = Reflect.callMethod(target, getContext) as? Context ?: return null
+        return runCatching { ctx.display?.displayId }.getOrNull()
     }
 
     /** 详细日志：打印候选类里所有同名方法的签名。 */

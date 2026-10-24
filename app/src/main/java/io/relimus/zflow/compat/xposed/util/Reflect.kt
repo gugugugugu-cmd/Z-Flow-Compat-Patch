@@ -81,6 +81,15 @@ object Reflect {
         }.getOrNull()
     }
 
+    /** 调用静态方法（[callMethod] 不接受 null target，静态调用走这里）；失败返回 null。 */
+    fun callStatic(method: Method?, vararg args: Any?): Any? {
+        if (method == null) return null
+        return runCatching {
+            method.isAccessible = true
+            method.invoke(null, *args)
+        }.getOrNull()
+    }
+
     /** 在类继承链上按名称读取字段。 */
     fun getField(target: Any?, name: String): Any? {
         if (target == null) return null
