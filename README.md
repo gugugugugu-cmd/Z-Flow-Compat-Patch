@@ -573,6 +573,10 @@ chain.proceed()
 
 ## 12. 微信新版本适配流程
 
+> 完整的定位方法论（锚点不变量表、版本差异速查表、五步定位法、排障速查）已独立成
+> [docs/wechat-adaptation-guide.md](docs/wechat-adaptation-guide.md)；本节保留基于
+> 日志的快速判读流程。8.0.76 的适配实例见第 25-29 节。
+
 微信升级后不要立即替换候选名。按以下顺序确认。
 
 ### 第一步：保留旧版并采集详细日志
@@ -828,6 +832,11 @@ DelegateLastClassLoader
 ./gradlew :app:assembleRelease
 ```
 
+Windows 中文路径工作区需在 `gradle.properties` 保留 `android.overridePathCheck=true`
+（AGP 9 起非 ASCII 项目路径默认硬性报错）。注意 `services.gradle.org` 的发行包下载
+会 307 重定向到 GitHub，GitHub 不可达的网络下需改用镜像（如
+`https://mirrors.cloud.tencent.com/gradle/gradle-9.4.1-bin.zip`）手动安装 Gradle。
+
 ## 安装
 
 1. 安装 APK；
@@ -850,6 +859,113 @@ Z-Flow 上游已通过 [PR #1](https://github.com/ldbsmh/Z-Flow/pull/1) 移除�
 - Copyright (C) 2023 DtHnAme
 - Copyright (C) 2024-2026 relimus
 
+
+---
+
+# 微信 8.0.76 适配：混淆名映射与双行状态栏根治
+
+以下内容基于对设备上 `微信_8.0.76.apk`（versionCode 3141，17 个 dex、236037 个类）
+的反编译分析，分析方法与第 12 节一致：以不随混淆变化的字符串（日志、偏好键）与
+框架方法名为锚点定位，再读 smali 确认语义。
+
+## 25. 8.0.76 混淆名映射
+
+| 用途 | 8.0.79 | 8.0.76 |
+| --- | --- | --- |
+| 状态栏高度工具类（WeUIToolHelper） | `com.tencent.mm.ui.ol` | `com.tencent.mm.ui.bl` |
+| 状态栏高度主入口 | `ol.i(Context, int)` | `bl.i(Context, int)`（签名不变） |
+| 系统状态栏高度反射读取 | `ol.k(Context, int)` | `bl.k(Context, int)` |
+| ActionBar 高度 | `ol.a(Context)` | `bl.a(Context)` |
+| 首页读取状态栏高度 | `MainUI.K0()` | `MainUI.y0()` |
+| 首页写 margin/mask | `MainUI.H0(int, int)` | `MainUI.u0(int, int)` |
+| 多窗口标志字段 | `MainUI.H` | `MainUI.H`（未变） |
+| 首页异步重试 | `conversation.w7.run()` | `conversation.l7.run()` |
+| 通讯录顶部总高度 | `BaseAddressUIFragment.I0()` | `BaseAddressUIFragment.u0()` |
+| 通讯录写 paddingTop | `BaseAddressUIFragment.M0()` | `BaseAddressUIFragment.y0()` |
+
+`MainUI`、`BaseAddressUIFragment`、`ConversationListView`、`LauncherUI` 等大类类名未混淆。
+工具类 `ui.ol → ui.bl` 改名后旧候选列表全部落空，因此 8.0.76 上旧补丁会整体静默跳过。
+
+## 26. 双行状态栏的真正根因：u0 在小窗里永远不会被调用
+
+8.0.76 的首页布局链路（反编译还原）：
+
+```java
+// MainUI.y0()，由 m0(onTabCreate) / onConfigurationChanged 触发
+int status = bl.i(context, -1);
+if (status <= 0) {           // 归零补丁生效后，小窗里恒走此分支
+    listView.post(new l7(this, showHeader));   // 异步重试
+    return;                   // ← 不同步调用 u0！
+}
+u0(showHeader ? 0 : actionBarHeight, status);
+
+// conversation.l7.run()，重试最多 3 次
+int status = bl.i(context, -1);
+if (status <= 0) { retry / give up; return; }  // ← 同样永远不调 u0
+u0(showHeader ? 0 : actionBarHeight, status);
+```
+
+`u0(int, int)` 是会话列表 `topMargin` 与状态栏 mask 高度的**唯一写入者**，且带守卫：
+
+```java
+// u0 对 topMargin 与 mask 各执行一遍同样的守卫
+if (currentValue > 0 && !H) return;   // H = isInMultiWindowMode，虚拟屏上恒为 false
+if (H) { margin = 0; maskHeight = 0; }         // 多窗口：强制清零
+else   { margin = p1; maskHeight = p2; }       // 普通：只有当前值 ≤ 0 才允许写入
+```
+
+于是死锁形成：
+
+1. 全屏阶段 `y0/l7 → u0(actionBar, 124)` 写入 margin 与 mask=124；
+2. 切回小窗后 `bl.i` 被补丁归零 → `y0` 与 `l7` 全部提前 return；
+3. `u0` 一次都不会被调用 → 全屏写入的 124px mask 永久残留 → 双行状态栏；
+4. 即便 `u0` 被调用，守卫（当前值 > 0 且 `H=false`）也会拒绝覆盖。
+
+旧补丁挂在 `u0`（`H0`）上的“临时置 `H=true`”钩子因此是**死代码**——它等待的调用
+永远不会发生。这就是“多次小窗-全屏-小窗切换后偶尔双行”的根源：只有切换过程伴随
+Fragment 重建（视图回到 XML 默认的 0/0）时才碰巧恢复正常。
+
+## 27. 根治方案
+
+小窗中首页的正确布局（margin=0 / mask=0）与两个事实一致：冷启动小窗时视图保持 XML
+默认值即为正确显示；微信自己在 `H=true`（平台多窗口）时的强制清零分支。因此：
+
+1. **触发器**：hook `MainUI.onConfigurationChanged`（框架方法名永不混淆，跨屏切换
+   必然触发）。微信自身逻辑（更新 `H`、调用 `y0`）执行完毕后仍在虚拟屏时，post
+   一个清零任务到主线程（立即 + 延迟 300ms 各一次，等待 `l7` 的异步重试链跑完；
+   执行时复查仍在虚拟屏，避免与用户的下一次切屏竞争）；
+2. **清零动作**：临时把字段 `H` 置 true，反射调用 `u0(0, 0)`，让微信自己的
+   “多窗口强制清零”分支把 topMargin 与 mask 归零，随后恢复 `H`。不自己写任何布局
+   数学，最终状态由微信代码产生；
+3. **兜底**：hook `u0` 本身——但不再按混淆名定位，改为在 `MainUI` 已声明方法中按
+   `(II)V` 签名**唯一定位**（8.0.76 中仅 `u0` 匹配；命中多个则放弃并记日志）。
+   虚拟屏上被调用时同样临时置 `H=true`，防止显示切换竞态期间带着全屏参数写入；
+4. 主屏（`DEFAULT_DISPLAY`）一律放行：回全屏后 `y0 → u0(actionBar, 124)` 的守卫
+   因当前值已为 0 而放行，正常恢复全屏布局。
+
+## 28. 通讯录 / 发现 / 聊天容器：8.0.76 缓存读者扩容
+
+8.0.76 中 `Main_top_marign` 全屏缓存的读取者从 1 个变成 3 个（写入者仍是
+`ConversationListView.v(int, boolean)` 的 `saveTopMargin`）：
+
+| 读取者 | 8.0.76 方法 | 返回语义 | 小窗拦截返回值 |
+| --- | --- | --- | --- |
+| `BaseAddressUIFragment`（通讯录） | `u0()I` | ActionBar + statusHeight/缓存 | 仅 `bl.a(ctx)` |
+| `FindMoreFriendsUI`（发现） | `L0()I` | ActionBar + statusHeight/缓存（**8.0.76 新增缓存分支**） | 仅 `bl.a(ctx)` |
+| `NewChattingTabUI`（聊天容器） | `j()I` | 纯 statusHeight/缓存（无 ActionBar） | `0` |
+
+三者拦截条件不变：仅在虚拟屏（`displayId != DEFAULT_DISPLAY`）且开关打开时生效，
+主屏完全放行。`FindMoreFriendsUI` 在 8.0.79 没有缓存分支（第 8.1 节），8.0.76 起
+与通讯录同构，所以“展开后缩回只有某页变宽”的判断表需要按版本更新。
+
+## 29. 8.0.76 验证要点
+
+- `LSPosed` 日志应出现 `命中候选类 com.tencent.mm.ui.bl` 与三条
+  `已挂钩…（仅保留 ActionBar 高度 / 状态栏高度归 0）`；
+- 首页连续执行 5 次以上“小窗 ↔ 全屏”切换，每次切回小窗后顶部应只有一行标题，
+  且详细日志出现 `首页清零 margin/mask（临时 H=true 走微信强制清零分支）`；
+- 通讯录/发现页展开后缩回不应重新变宽；
+- 回到全屏后首页顶部应恢复全屏状态栏高度（清零不能污染主屏）。
 
 ---
 
